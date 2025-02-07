@@ -5,8 +5,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-MODEL_PATH = "models/energy_model.pkl"
-SCALER_PATH = "models/scaler.pkl"
+MODEL_PATH = "models/trainedData/energy_model.pkl"
+SCALER_PATH = "models/trainedData/scaler.pkl"
 
 # Load existing model and scaler if available
 def load_model():
