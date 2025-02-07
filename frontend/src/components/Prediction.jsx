@@ -30,7 +30,7 @@ const Prediction = () => {
       alert("Error making predictions. Check the console for details.");
     }
   };
-  
+
   
   // Handle Manual Input
   const handleManualPredict = async () => {
