@@ -24,44 +24,37 @@ else:
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()  # Try to get JSON input first
-
-    if data:  # If JSON data is received (manual input)
-        try:
-            df = pd.DataFrame([data])  # Convert single input to DataFrame
-        except Exception as e:
-            return jsonify({"error": f"Invalid input format: {str(e)}"}), 400
-    elif 'file' in request.files:  # If a file is uploaded
+    if 'file' in request.files:  # Handle file upload
         file = request.files['file']
         if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-        
+            return jsonify({"error": "No file selected"}), 400
+
         try:
             df = pd.read_csv(file)
         except Exception as e:
             return jsonify({"error": f"Error reading file: {str(e)}"}), 400
     else:
-        return jsonify({"error": "No input provided"}), 400
+        try:
+            data = request.get_json()  # Handle manual input
+            if not data:
+                return jsonify({"error": "No input provided"}), 400
+            df = pd.DataFrame([data])
+        except Exception as e:
+            return jsonify({"error": f"Invalid input format: {str(e)}"}), 400
 
-    # Check if required columns exist
+    # Ensure required columns exist
     required_columns = ['month', 'weekday', 'temperature', 'is_holiday', 'day_of_year']
     missing_columns = [col for col in required_columns if col not in df.columns]
-    
     if missing_columns:
         return jsonify({"error": f"Missing required columns: {', '.join(missing_columns)}"}), 400
 
-    # Preprocess and predict
+    # Preprocess & predict
     X = df[required_columns]
     X_scaled = scaler.transform(X)
     prediction = model.predict(X_scaled)
-    
+
     df['predicted_consumption'] = prediction
     result = df.to_dict(orient='records')
-
-   # Convert the results to proper types (ensure numbers)
-    for entry in result:
-        entry['day_of_year'] = int(entry['day_of_year'])  # Convert day_of_year to an integer
-    entry['predicted_consumption'] = round(float(entry['predicted_consumption']), 2)  # Convert predicted_consumption to a float and round to 2 decimal places
 
     return jsonify(result)
 
