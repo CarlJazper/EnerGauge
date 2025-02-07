@@ -12,10 +12,11 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
 
-def generate_jwt(user_id):
+def generate_jwt(user_id,role):
     """Generate JWT token"""
     payload = {
         "user_id": str(user_id),
+        "role": role,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=JWT_EXPIRATION_MINUTES)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
@@ -50,9 +51,10 @@ def register_user():
 
     # Insert user into database
     inserted_user = mongo.db.users.insert_one(user_data)
+    # After registering or logging in the user, get the role and generate the JWT token
+    role = user_data.get('role', 'user')  # Default to 'user' if role is not set
+    token = generate_jwt(inserted_user.inserted_id, role)
 
-    # Generate token
-    token = generate_jwt(inserted_user.inserted_id)
 
     return jsonify({"message": "User registered successfully", "token": token}), 201
 
@@ -71,8 +73,9 @@ def login_user():
     # Verify password
     if not check_password_hash(user['password'], data['password']):
         return jsonify({"message": "Incorrect password"}), 400
-
+    
+    role = user.get('role')
     # Generate JWT token
-    token = generate_jwt(user["_id"])
+    token = generate_jwt(user["_id"], role)
 
     return jsonify({"message": "Login successful", "token": token}), 200

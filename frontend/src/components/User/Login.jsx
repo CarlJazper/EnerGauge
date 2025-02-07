@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { TextField, Button, Box, Typography, Link } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import {jwtDecode} from 'jwt-decode';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,9 +16,19 @@ const Login = () => {
         email,
         password
       });
-      
-      localStorage.setItem('token', response.data.token); // Store JWT
-      navigate('/'); // Redirect to home
+
+      // Store token in sessionStorage
+      sessionStorage.setItem('token', response.data.token);
+
+      // Decode the token to extract the role
+      const decodedToken = jwtDecode(response.data.token);
+      const role = decodedToken.role || 'user'; // Default to 'user' if no role is found
+
+      // Store role in sessionStorage
+      sessionStorage.setItem('role', role);
+
+      // Redirect to home or dashboard
+      navigate('/'); 
     } catch (error) {
       setMessage(error.response?.data.message || "Something went wrong");
     }
