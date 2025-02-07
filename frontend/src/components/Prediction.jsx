@@ -12,21 +12,26 @@ const Prediction = () => {
   });
   const [predictions, setPredictions] = useState([]);
 
-  // Handle CSV Upload
   const handleUpload = async () => {
     if (!file) return alert("Please select a file.");
+  
     const formData = new FormData();
     formData.append("file", file);
-
+  
     try {
-      const response = await axios.post("http://localhost:5000/predict", formData);
+      const response = await axios.post("http://localhost:5000/predict", formData, {
+        headers: { "Content-Type": "multipart/form-data" }, 
+      });
+  
       console.log("Predictions data:", response.data);
       setPredictions(response.data);
     } catch (error) {
-      alert("Error making predictions.");
+      console.error("Error making predictions:", error.response ? error.response.data : error);
+      alert("Error making predictions. Check the console for details.");
     }
   };
-
+  
+  
   // Handle Manual Input
   const handleManualPredict = async () => {
     try {
