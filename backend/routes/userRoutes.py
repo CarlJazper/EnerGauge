@@ -1,5 +1,6 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from controllers.userController import register_user, login_user
+from middlewares.authMiddleware import token_required
 
 user_bp = Blueprint('user_bp', __name__)
 

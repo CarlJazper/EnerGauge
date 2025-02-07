@@ -1,0 +1,34 @@
+import os
+import jwt
+from flask import request, jsonify
+from functools import wraps
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Check if token is in headers
+        if "Authorization" in request.headers:
+            token = request.headers["Authorization"].split(" ")[1]  # "Bearer <token>"
+
+        if not token:
+            return jsonify({"message": "Token is missing"}), 401
+
+        try:
+            # Decode token
+            decoded_data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            request.user_id = decoded_data["user_id"]  # Attach user_id to request
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token has expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token"}), 401
+
+        return f(*args, **kwargs)
+
+    return decorated

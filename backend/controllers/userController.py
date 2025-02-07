@@ -1,7 +1,24 @@
+import os
+import jwt
+import datetime
 from flask import jsonify, request
-from models.userModel import get_user_schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from config.db import mongo
+from models.userModel import get_user_schema
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
+
+def generate_jwt(user_id):
+    """Generate JWT token"""
+    payload = {
+        "user_id": str(user_id),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=JWT_EXPIRATION_MINUTES)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 def register_user():
     data = request.get_json()
@@ -32,9 +49,12 @@ def register_user():
     })
 
     # Insert user into database
-    mongo.db.users.insert_one(user_data)
+    inserted_user = mongo.db.users.insert_one(user_data)
 
-    return jsonify({"message": "User registered successfully"}), 201
+    # Generate token
+    token = generate_jwt(inserted_user.inserted_id)
+
+    return jsonify({"message": "User registered successfully", "token": token}), 201
 
 def login_user():
     data = request.get_json()
@@ -52,4 +72,7 @@ def login_user():
     if not check_password_hash(user['password'], data['password']):
         return jsonify({"message": "Incorrect password"}), 400
 
-    return jsonify({"message": "Login successful"}), 200
+    # Generate JWT token
+    token = generate_jwt(user["_id"])
+
+    return jsonify({"message": "Login successful", "token": token}), 200
