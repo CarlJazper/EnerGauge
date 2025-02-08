@@ -39,11 +39,36 @@ const Header = () => {
     setAnchorEl(null);
   };
 
+  // Define nav link styles
+  const navLinkStyle = {
+    color: '#3f2b12',
+    fontSize: '1rem',
+    textTransform: 'none',
+    '&:hover': { color: '#4Caf50', opacity: 0.7 },
+  };
+
+  // Check if a link is active
+  const isActive = (path) => location.pathname === path;
+
+  // Define nav links based on user role
+  const navLinks =
+    role === 'admin'
+      ? [
+          { name: 'Dashboard', path: '/admin/dashboard' },
+          { name: 'Train Model', path: '/admin/train' },
+        ]
+      : [
+          { name: 'Home', path: '/' },
+          { name: 'About Us', path: '/about' },
+          ...(isLoggedIn && role === 'user'
+            ? [{ name: 'Prediction', path: '/prediction' }] // Add "Prediction" for logged-in users
+            : []),
+        ];
+
   return (
-    <AppBar position="static" color="primary">
+    <AppBar position="static" sx={{backgroundColor: "#ffdd44"}}>
       <Container>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          
           {/* Logo */}
           <Box sx={{ flexGrow: 1 }}>
             <IconButton edge="start" color="inherit" aria-label="logo" component={Link} to="/">
@@ -52,12 +77,20 @@ const Header = () => {
           </Box>
 
           {/* Navigation Links */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexGrow: 1 }}>
-            <Button color="inherit" component={Link} to="/">Home</Button>
-            <Button color="inherit" component={Link} to="/about">About Us</Button>
-
-            {isLoggedIn && role === 'user' && <Button color="inherit" component={Link} to="/prediction">Prediction</Button>}
-            {isLoggedIn && role === 'admin' && <Button color="inherit" component={Link} to="admin/train">Train Model</Button>}
+          <Box sx={{ display: 'flex', flexGrow: 1, gap: 2}}>
+            {navLinks.map((link) => (
+              <Button
+                key={link.path}
+                component={Link}
+                to={link.path}
+                sx={{
+                  ...navLinkStyle,
+                  borderBottom: isActive(link.path) ? '2px solid #4caf50' : 'none',
+                }}
+              >
+                {link.name}
+              </Button>
+            ))}
           </Box>
 
           {/* Profile Dropdown / Login Button */}
@@ -70,15 +103,23 @@ const Header = () => {
 
                 {/* Dropdown Menu */}
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                  <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Profile</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate('/profile');
+                    }}
+                  >
+                    Profile
+                  </MenuItem>
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>
               </>
             ) : (
-              <Button color="inherit" component={Link} to="/login">Login</Button>
+              <Button color="inherit" component={Link} to="/login">
+                Login
+              </Button>
             )}
           </Box>
-
         </Toolbar>
       </Container>
     </AppBar>
