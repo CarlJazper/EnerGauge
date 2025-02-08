@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Container, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Container, IconButton, Menu, MenuItem, Avatar } from '@mui/material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null); // State for dropdown menu
   const navigate = useNavigate();
   const location = useLocation(); // Detects route changes
 
@@ -26,7 +27,16 @@ const Header = () => {
     sessionStorage.removeItem('role');
     setIsLoggedIn(false);
     setRole('');
+    setAnchorEl(null);
     navigate('/'); // Redirect after logout
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   return (
@@ -50,12 +60,19 @@ const Header = () => {
             {isLoggedIn && role === 'admin' && <Button color="inherit" component={Link} to="admin/train">Train Model</Button>}
           </Box>
 
-          {/* Login / Profile Management */}
+          {/* Profile Dropdown / Login Button */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {isLoggedIn ? (
               <>
-                <Button color="inherit" component={Link} to="/profile">Profile Management</Button>
-                <Button color="inherit" onClick={handleLogout}>Logout</Button>
+                <IconButton onClick={handleMenuOpen} color="inherit">
+                  <Avatar sx={{ bgcolor: 'secondary.main' }}>{role.charAt(0).toUpperCase()}</Avatar>
+                </IconButton>
+
+                {/* Dropdown Menu */}
+                <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>Profile</MenuItem>
+                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                </Menu>
               </>
             ) : (
               <Button color="inherit" component={Link} to="/login">Login</Button>
