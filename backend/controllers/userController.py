@@ -1,11 +1,13 @@
 import os
 import jwt
 import datetime
-from flask import jsonify, request
+from flask import jsonify, request, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from config.db import mongo
 from models.userModel import get_user_schema
 from dotenv import load_dotenv
+from middlewares.authMiddleware import token_required
+from bson import ObjectId
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +22,40 @@ def generate_jwt(user_id,role):
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=JWT_EXPIRATION_MINUTES)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
+@token_required
+def get_user_profile():
+    """Get user profile details"""
+    user_id = g.user_id  # Use `g.user_id` instead of `request.user_id`
+    user = mongo.db.users.find_one({"_id": ObjectId(user_id)}, {"password": 0})  # Exclude password
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
+    return jsonify(user), 200
+
+
+@token_required
+def update_user_profile():
+    """Update user profile"""
+    user_id = g.user_id
+    data = request.get_json()
+
+    # Only allow updates to certain fields
+    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
+    update_data = {field: data[field] for field in allowed_fields if field in data}
+
+    if not update_data:
+        return jsonify({"message": "No valid fields to update"}), 400
+
+    result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+
+    if result.modified_count == 0:
+        return jsonify({"message": "No changes made"}), 200
+
+    return jsonify({"message": "Profile updated successfully"}), 200
+
 
 def register_user():
     data = request.get_json()

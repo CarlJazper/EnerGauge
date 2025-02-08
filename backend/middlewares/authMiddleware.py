@@ -1,6 +1,6 @@
+from flask import request, jsonify, g
 import os
 import jwt
-from flask import request, jsonify
 from functools import wraps
 from dotenv import load_dotenv
 
@@ -23,7 +23,7 @@ def token_required(f):
         try:
             # Decode token
             decoded_data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            request.user_id = decoded_data["user_id"]  # Attach user_id to request
+            g.user_id = decoded_data["user_id"]  # Attach user_id to `g` instead of `request`
         except jwt.ExpiredSignatureError:
             return jsonify({"message": "Token has expired"}), 401
         except jwt.InvalidTokenError:

@@ -52,7 +52,7 @@ const Header = () => {
           </Box>
 
           {/* Navigation Links */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', flexGrow: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexGrow: 1 }}>
             <Button color="inherit" component={Link} to="/">Home</Button>
             <Button color="inherit" component={Link} to="/about">About Us</Button>
 

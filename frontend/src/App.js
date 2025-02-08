@@ -9,6 +9,7 @@ import TrainModel from './components/Admin/TrainModel';
 import Prediction from './components/Prediction/Prediction';
 import ProtectedRoute from "./components/utils/protectedRoute";
 import AdminDashboard from './components/Admin/Dashboard';
+import Profile from "./components/User/Profile";
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <Route path="/" element={<Home />}/>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="/profile" element={<Profile/>}/>
         <Route
           path="/prediction"
           element={
