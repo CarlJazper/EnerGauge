@@ -41,10 +41,11 @@ const Header = () => {
 
   // Define nav link styles
   const navLinkStyle = {
-    color: '#3f2b12',
+    color: '#143D60',
     fontSize: '1rem',
+    fontWeight: 'bold',
     textTransform: 'none',
-    '&:hover': { color: '#4Caf50', opacity: 0.7 },
+    '&:hover': { color: '#27667B', opacity: 0.7 },
   };
 
   // Check if a link is active
@@ -66,7 +67,7 @@ const Header = () => {
         ];
 
   return (
-    <AppBar position="static" sx={{backgroundColor: "#ffdd44"}}>
+    <AppBar position="static" sx={{backgroundColor: "#DDEB9D"}}>
       <Container>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Logo */}
@@ -85,7 +86,7 @@ const Header = () => {
                 to={link.path}
                 sx={{
                   ...navLinkStyle,
-                  borderBottom: isActive(link.path) ? '2px solid #4caf50' : 'none',
+                  borderBottom: isActive(link.path) ? '2px solid #143D60' : 'none',
                 }}
               >
                 {link.name}
@@ -115,7 +116,8 @@ const Header = () => {
                 </Menu>
               </>
             ) : (
-              <Button color="inherit" component={Link} to="/login">
+              <Button color="inherit" component={Link} to="/login"
+              sx={{ bgcolor:'#27667B' }}>
                 Login
               </Button>
             )}
