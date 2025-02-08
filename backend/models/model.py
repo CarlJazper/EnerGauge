@@ -1,9 +1,5 @@
 import os
 import joblib
-import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 
 MODEL_PATH = "models/trainedData/energy_model.pkl"
 SCALER_PATH = "models/trainedData/scaler.pkl"
