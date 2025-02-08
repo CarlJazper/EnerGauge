@@ -73,7 +73,7 @@ const Header = () => {
           {/* Logo */}
           <Box sx={{ flexGrow: 1 }}>
             <IconButton edge="start" color="inherit" aria-label="logo" component={Link} to="/">
-              <img src="/images/logo.png" alt="Logo" style={{ height: '40px' }} />
+              <img src="/images/logo.png" alt="Logo" style={{ height: '4rem', borderRadius:'50%' }} />
             </IconButton>
           </Box>
 
