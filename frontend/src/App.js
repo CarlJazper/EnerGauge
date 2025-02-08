@@ -5,7 +5,10 @@ import Login from "./components/User/Login";
 import Register from "./components/User/Register";
 import Header from "./components/layouts/Header";
 import Prediction from './components/Prediction/Prediction';
+
 import ProtectedRoute from "./components/utils/protectedRoute";
+
+import AdminDashboard from './components/Admin/Dashboard';
 
 function App() {
   return (
@@ -24,6 +27,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+          }
+          />
 
       </Routes>
     </Router>
