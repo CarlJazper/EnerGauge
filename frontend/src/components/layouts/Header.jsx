@@ -33,6 +33,7 @@ const Header = () => {
     <AppBar position="static" color="primary">
       <Container>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          
           {/* Logo */}
           <Box sx={{ flexGrow: 1 }}>
             <IconButton edge="start" color="inherit" aria-label="logo" component={Link} to="/">
@@ -44,7 +45,9 @@ const Header = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', flexGrow: 2 }}>
             <Button color="inherit" component={Link} to="/">Home</Button>
             <Button color="inherit" component={Link} to="/about">About Us</Button>
+
             {isLoggedIn && role === 'user' && <Button color="inherit" component={Link} to="/prediction">Prediction</Button>}
+            {isLoggedIn && role === 'admin' && <Button color="inherit" component={Link} to="admin/train">Train Model</Button>}
           </Box>
 
           {/* Login / Profile Management */}
@@ -58,6 +61,7 @@ const Header = () => {
               <Button color="inherit" component={Link} to="/login">Login</Button>
             )}
           </Box>
+
         </Toolbar>
       </Container>
     </AppBar>

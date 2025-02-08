@@ -1,13 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route} from "react-router-dom";
+
 import Home from "./components/Home";
+import Header from "./components/layouts/Header";
 import Login from "./components/User/Login";
 import Register from "./components/User/Register";
-import Header from "./components/layouts/Header";
+import TrainModel from './components/Admin/TrainModel';
 import Prediction from './components/Prediction/Prediction';
-
 import ProtectedRoute from "./components/utils/protectedRoute";
-
 import AdminDashboard from './components/Admin/Dashboard';
 
 function App() {
@@ -29,11 +29,20 @@ function App() {
         />
 
         <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminDashboard />
-          </ProtectedRoute>
+          path="admin/train"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <TrainModel/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
           }
           />
 
