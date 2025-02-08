@@ -60,10 +60,10 @@ const Header = () => {
         ]
       : [
           { name: 'Home', path: '/' },
-          { name: 'About Us', path: '/about' },
           ...(isLoggedIn && role === 'user'
             ? [{ name: 'Prediction', path: '/prediction' }] // Add "Prediction" for logged-in users
             : []),
+          { name: 'About Us', path: '/about' },
         ];
 
   return (
