@@ -19,15 +19,15 @@ const Login = () => {
         password
       });
 
-      // Store token in sessionStorage
-      sessionStorage.setItem('token', response.data.token);
+      // Store token in localStorage
+      localStorage.setItem('token', response.data.token);
 
       // Decode the token to extract the role
       const decodedToken = jwtDecode(response.data.token);
       const role = decodedToken.role || 'user'; // Default to 'user' if no role is found
 
-      // Store role in sessionStorage
-      sessionStorage.setItem('role', role);
+      // Store role in localStorage
+      localStorage.setItem('role', role);
 
       // Redirect based on role
       if (role === 'admin') {

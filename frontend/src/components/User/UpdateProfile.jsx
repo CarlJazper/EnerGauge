@@ -17,7 +17,7 @@ const UpdateProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = sessionStorage.getItem("token");
+        const token = localStorage.getItem("token");
         const response = await axios.get("http://localhost:5000/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -36,7 +36,7 @@ const UpdateProfile = () => {
 
   const handleUpdate = async () => {
     try {
-      const token = sessionStorage.getItem("token");
+      const token = localStorage.getItem("token");
       await axios.put("http://localhost:5000/api/users/profile/update", user, {
         headers: { Authorization: `Bearer ${token}` },
       });

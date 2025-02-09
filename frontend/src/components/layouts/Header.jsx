@@ -10,8 +10,8 @@ const Header = () => {
   const location = useLocation(); // Detects route changes
 
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    const userRole = sessionStorage.getItem('role');
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('role');
 
     if (token) {
       setIsLoggedIn(true);
@@ -23,8 +23,8 @@ const Header = () => {
   }, [location.pathname]); // Runs effect when the route changes
 
   const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('role');
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setIsLoggedIn(false);
     setRole('');
     setAnchorEl(null);

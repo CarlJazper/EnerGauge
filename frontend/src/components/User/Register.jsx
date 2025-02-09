@@ -21,15 +21,15 @@ const Register = () => {
         password
       });
 
-      // Store the token in sessionStorage
-      sessionStorage.setItem('token', response.data.token);
+      // Store the token in localStorage
+      localStorage.setItem('token', response.data.token);
 
       // Decode the token to extract the role
       const decodedToken = jwtDecode(response.data.token);
       const role = decodedToken.role || 'user'; // Default to 'user' if role is not in token
 
-      // Store the role in sessionStorage
-      sessionStorage.setItem('role', role);
+      // Store the role in localStorage
+      localStorage.setItem('role', role);
 
       // Redirect to home or dashboard after successful registration
       navigate('/'); 
