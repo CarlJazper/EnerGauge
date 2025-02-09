@@ -1,6 +1,7 @@
 from flask import request, jsonify
 import pandas as pd
 from models.model import load_model, preprocess_data
+import joblib
 
 def predict():
     model, scaler = load_model()
@@ -24,13 +25,25 @@ def predict():
         except Exception as e:
             return jsonify({"error": f"Invalid input format: {str(e)}"}), 400
 
-    required_columns = ['month', 'weekday', 'temperature', 'is_holiday', 'day_of_year']
+    # Load feature columns used during training
+    trained_columns = joblib.load("models/trainedData/columns.pkl")
+
+    # Required columns based on training
+    required_columns = [
+        "Temperature", "Humidity", "SquareFootage", "Occupancy",
+        "HVACUsage", "LightingUsage", "RenewableEnergy",
+        "DayOfWeek", "Holiday"
+    ]
+    
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         return jsonify({"error": f"Missing required columns: {', '.join(missing_columns)}"}), 400
 
-    X_scaled = preprocess_data(df, scaler)
-    prediction = model.predict(X_scaled)
+    try:
+        X_scaled = preprocess_data(df, scaler)
+        prediction = model.predict(X_scaled)
+    except Exception as e:
+        return jsonify({"error": f"Prediction error: {str(e)}"}), 500
 
     df['predicted_consumption'] = prediction
     return jsonify(df.to_dict(orient='records'))

@@ -1,41 +1,50 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button } from "@mui/material";
 import axios from "axios";
 
 const TrainModel = () => {
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState("");
   const [metrics, setMetrics] = useState(null);
+  const [error, setError] = useState("");
 
-  const handleUpload = async () => {
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleTrain = async () => {
     if (!file) {
-      setMessage("Please select a file.");
+      setError("Please upload a CSV file.");
       return;
     }
 
+    setError("");
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:5000/train", formData);
-      setMessage(response.data.message);
+      const response = await axios.post("http://localhost:5000/train", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setMetrics(response.data.metrics);
-    } catch (error) {
-      setMessage("Error training model.");
+    } catch (err) {
+      setError(err.response?.data?.error || "An error occurred while training.");
     }
   };
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2>Train Model</h2>
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleUpload}>Train</button>
-      <p>{message}</p>
+      <input type="file" accept=".csv" onChange={handleFileChange} />
+      <Button variant="contained" color="primary" onClick={handleTrain} style={{ marginLeft: "10px" }}>
+        Train Model
+      </Button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
       {metrics && (
         <div>
-          <h3>Model Metrics</h3>
-          <p>R² Score: {metrics["R2 Score"]}</p>
-          <p>MAE: {metrics["MAE"]}</p>
-          <p>RMSE: {metrics["RMSE"]}</p>
+          <h3>Training Metrics</h3>
+          <p><strong>R2 Score:</strong> {metrics["R2 Score"].toFixed(4)}</p>
+          <p><strong>MAE:</strong> {metrics["MAE"].toFixed(4)}</p>
+          <p><strong>RMSE:</strong> {metrics["RMSE"].toFixed(4)}</p>
         </div>
       )}
     </div>

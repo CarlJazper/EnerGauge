@@ -16,21 +16,39 @@ def train():
     except Exception as e:
         return jsonify({"error": f"Error reading file: {str(e)}"}), 400
 
-    required_columns = ["month", "weekday", "temperature", "is_holiday", "day_of_year", "energy_consumption"]
+    required_columns = [
+        "Temperature", "Humidity", "SquareFootage", "Occupancy",
+        "HVACUsage", "LightingUsage", "RenewableEnergy",
+        "DayOfWeek", "Holiday", "EnergyConsumption"
+    ]
+    
     if not all(col in df.columns for col in required_columns):
         return jsonify({"error": "Missing required columns"}), 400
 
-    X = df[["month", "weekday", "temperature", "is_holiday", "day_of_year"]]
-    y = df["energy_consumption"]
+    # Convert categorical columns
+    df["HVACUsage"] = df["HVACUsage"].map({"On": 1, "Off": 0})
+    df["LightingUsage"] = df["LightingUsage"].map({"On": 1, "Off": 0})
+    df["Holiday"] = df["Holiday"].map({"Yes": 1, "No": 0})
 
+    # One-hot encode "DayOfWeek"
+    df = pd.get_dummies(df, columns=["DayOfWeek"], drop_first=True)
+
+    # Features and Target
+    X = df.drop(columns=["EnergyConsumption"])
+    y = df["EnergyConsumption"]
+
+    # Scale numerical features
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
+    # Split data
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
+    # Train model
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
 
+    # Evaluate model
     y_pred = model.predict(X_test)
     metrics = {
         "R2 Score": r2_score(y_test, y_pred),
@@ -38,6 +56,10 @@ def train():
         "RMSE": mean_squared_error(y_test, y_pred) ** 0.5,
     }
 
-    save_model(model, scaler)
+    # Get feature names after one-hot encoding
+    trained_columns = list(X.columns)
+
+    # Save model, scaler, and trained columns
+    save_model(model, scaler, trained_columns)
 
     return jsonify({"message": "Model trained successfully", "metrics": metrics})

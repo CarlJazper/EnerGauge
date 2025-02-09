@@ -1,111 +1,86 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Button, TextField } from "@mui/material";
 import axios from "axios";
 
 const Prediction = () => {
   const [file, setFile] = useState(null);
   const [manualInput, setManualInput] = useState({
-    month: "",
-    weekday: "",
-    temperature: "",
-    is_holiday: "",
-    day_of_year: ""
+    Temperature: "",
+    Humidity: "",
+    SquareFootage: "",
+    Occupancy: "",
+    HVACUsage: "",
+    LightingUsage: "",
+    RenewableEnergy: "",
+    DayOfWeek: "",
+    Holiday: "",
   });
-  const [predictions, setPredictions] = useState([]);
+  const [prediction, setPrediction] = useState(null);
+  const [error, setError] = useState("");
 
-  const handleUpload = async () => {
-    if (!file) return alert("Please select a file.");
-  
-    const formData = new FormData();
-    formData.append("file", file);
-  
-    try {
-      const response = await axios.post("http://localhost:5000/predict", formData, {
-        headers: { "Content-Type": "multipart/form-data" }, 
-      });
-  
-      console.log("Predictions data:", response.data);
-      setPredictions(response.data);
-    } catch (error) {
-      console.error("Error making predictions:", error.response ? error.response.data : error);
-      alert("Error making predictions. Check the console for details.");
-    }
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
   };
 
-  
-  // Handle Manual Input
-  const handleManualPredict = async () => {
+  const handleInputChange = (e) => {
+    setManualInput({ ...manualInput, [e.target.name]: e.target.value });
+  };
+
+  const handlePredict = async () => {
+    setError("");
     try {
-      const response = await axios.post("http://localhost:5000/predict", manualInput, {
-        headers: { "Content-Type": "application/json" }
-      });
-      console.log("Manual Prediction:", response.data);
-      
-      // Check the structure of the response to make sure it's an array
-      if (Array.isArray(response.data)) {
-        setPredictions(response.data); // Use the response directly if it's an array
+      let response;
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        response = await axios.post("http://localhost:5000/predict", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
-        alert("Unexpected response format.");
+        response = await axios.post("http://localhost:5000/predict", manualInput, {
+          headers: { "Content-Type": "application/json" },
+        });
       }
-    } catch (error) {
-      alert("Error making predictions.");
+      setPrediction(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || "Prediction error.");
     }
   };
-  
 
   return (
-    <div>
-      <h2>Predict Energy Consumption</h2>
+    <div style={{ padding: "20px" }}>
+      <h2>Make a Prediction</h2>
+      <input type="file" accept=".csv" onChange={handleFileChange} />
+      <Button variant="contained" color="primary" onClick={handlePredict} style={{ marginLeft: "10px" }}>
+        Predict from File
+      </Button>
 
-      {/* CSV Upload Section */}
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleUpload}>Predict from CSV</button>
-
-      <hr />
-
-      {/* Manual Input Section */}
       <h3>Or Enter Data Manually</h3>
-      <input
-        type="number"
-        placeholder="Month"
-        value={manualInput.month}
-        onChange={(e) => setManualInput({ ...manualInput, month: e.target.value })}
-      />
-      <input
-        type="number"
-        placeholder="Weekday"
-        value={manualInput.weekday}
-        onChange={(e) => setManualInput({ ...manualInput, weekday: e.target.value })}
-      />
-      <input
-        type="number"
-        placeholder="Temperature"
-        value={manualInput.temperature}
-        onChange={(e) => setManualInput({ ...manualInput, temperature: e.target.value })}
-      />
-      <input
-        type="number"
-        placeholder="Is Holiday (1 for Yes, 0 for No)"
-        value={manualInput.is_holiday}
-        onChange={(e) => setManualInput({ ...manualInput, is_holiday: e.target.value })}
-      />
-      <input
-        type="number"
-        placeholder="Day of Year"
-        value={manualInput.day_of_year}
-        onChange={(e) => setManualInput({ ...manualInput, day_of_year: e.target.value })}
-      />
-      <button onClick={handleManualPredict}>Predict from Manual Input</button>
+      {Object.keys(manualInput).map((key) => (
+        <TextField
+          key={key}
+          label={key}
+          name={key}
+          value={manualInput[key]}
+          onChange={handleInputChange}
+          margin="dense"
+          variant="outlined"
+          fullWidth
+        />
+      ))}
+      <Button variant="contained" color="primary" onClick={handlePredict} style={{ marginTop: "10px" }}>
+        Predict
+      </Button>
 
-      {/* Predictions Display */}
-      <ul>
-  {predictions.map((item, index) => (
-    <li key={index}>
-      Date: {Number(item.day_of_year)}, Predicted Consumption: {Number(item.predicted_consumption).toFixed(2)}
-    </li>
-  ))}
-</ul>
-
-
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {prediction && (
+        <div>
+          <h3>Prediction Results</h3>
+          {prediction.map((pred, index) => (
+            <p key={index}><strong>Predicted Consumption:</strong> {pred.predicted_consumption.toFixed(2)}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
