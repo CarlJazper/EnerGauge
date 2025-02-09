@@ -10,7 +10,7 @@ from middlewares.authMiddleware import token_required
 from bson import ObjectId
 
 # Load environment variables
-load_dotenv()
+load_dotenv("./config/.env")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
 

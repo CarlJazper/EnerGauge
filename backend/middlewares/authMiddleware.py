@@ -5,7 +5,7 @@ from functools import wraps
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv("./config/.env")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 def token_required(f):
@@ -18,7 +18,7 @@ def token_required(f):
             token = request.headers["Authorization"].split(" ")[1]  # "Bearer <token>"
 
         if not token:
-            return jsonify({"message": "Token is missing"}), 401
+            return jsonify({"message": "Token is missingss"}), 401
 
         try:
             # Decode token
