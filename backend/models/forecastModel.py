@@ -1,8 +1,8 @@
 import pickle
 import os
 
-MODEL_PATH = "models/arima_model.pkl"
-SCALER_PATH = "models/scaler.pkl"
+MODEL_PATH = "models/trainedDataForecast/arima_model.pkl"
+SCALER_PATH = "models/trainedDataForecast/scaler.pkl"
 
 def save_model(model, scaler):
     """Save the ARIMA model and scaler."""
