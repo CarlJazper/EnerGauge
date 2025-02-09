@@ -56,12 +56,15 @@ const Header = () => {
     role === 'admin'
       ? [
           { name: 'Dashboard', path: '/admin/dashboard' },
-          { name: 'Train Model', path: '/admin/train' },
+          { name: 'Train Energy Model', path: '/admin/train' },
+          { name: 'Train Forecast Model', path: '/admin/train_arima' },
         ]
       : [
           { name: 'Home', path: '/' },
           ...(isLoggedIn && role === 'user'
-            ? [{ name: 'Prediction', path: '/prediction' }] // Add "Prediction" for logged-in users
+            ? [{ name: 'Prediction', path: '/prediction' },
+               { name: 'Forecast', path: '/forecast' },
+              ] // Add "Prediction" for logged-in users
             : []),
           { name: 'About Us', path: '/about' },
         ];

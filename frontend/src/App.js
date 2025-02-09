@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/utils/protectedRoute";
 import AdminDashboard from './components/Admin/Dashboard';
 import Profile from "./components/User/Profile";
 import UpdateProfile from "./components/User/UpdateProfile";
+import TrainForecast from "./components/Admin/TrainForecast";
+import Forecast from "./components/Forecast/Forecast";
 
 function App() {
   return (
@@ -23,6 +25,10 @@ function App() {
 
         <Route path="/profile" element={<Profile/>}/>
         <Route path="/profile/update" element={<UpdateProfile/>}/>
+        
+        <Route path="/forecast" element={<Forecast/>}/>
+        <Route path="admin/train_arima" element={<TrainForecast/>}/>
+
         <Route
           path="/prediction"
           element={
