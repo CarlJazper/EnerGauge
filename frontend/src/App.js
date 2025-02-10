@@ -26,8 +26,21 @@ function App() {
         <Route path="/profile" element={<Profile/>}/>
         <Route path="/profile/update" element={<UpdateProfile/>}/>
         
-        <Route path="/forecast" element={<Forecast/>}/>
-        <Route path="admin/train_arima" element={<TrainForecast/>}/>
+        <Route 
+        path="/forecast" 
+        element={
+          <ProtectedRoute>
+            <Forecast/>
+          </ProtectedRoute>
+          }/>
+
+        <Route 
+        path="admin/train_arima" 
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+              <TrainForecast/>  
+          </ProtectedRoute>
+        }/>
 
         <Route
           path="/prediction"

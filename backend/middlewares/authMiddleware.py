@@ -24,6 +24,7 @@ def token_required(f):
             # Decode token
             decoded_data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             g.user_id = decoded_data["user_id"]  # Attach user_id to `g` instead of `request`
+            g.role = decoded_data.get("role") 
         except jwt.ExpiredSignatureError:
             return jsonify({"message": "Token has expired"}), 401
         except jwt.InvalidTokenError:

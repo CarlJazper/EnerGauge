@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, TextField, Box, Typography } from '@mui/material';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
 const Forecast = () => {
@@ -20,13 +21,22 @@ const Forecast = () => {
         try {
             const response = await axios.get('http://localhost:5000/predict_demand', {
                 params: { days },
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
             });
             setForecast(response.data.predictions);
         } catch (err) {
-            setError(err.response?.data?.error || 'Error fetching predictions');
+            setError(err.response?.data?.message || 'Error fetching predictions');
         } finally {
             setLoading(false);
         }
+    };
+
+    const formatForecastData = () => {
+        if (!forecast) return [];
+        return forecast.map((demand, index) => ({
+            day: `Day ${index + 1}`,
+            demand: Number(demand)
+        }));
     };
 
     return (
@@ -53,11 +63,15 @@ const Forecast = () => {
             {forecast && (
                 <Box sx={{ marginTop: 2 }}>
                     <Typography variant="h6">Forecast Results:</Typography>
-                    {Object.entries(forecast).map(([day, demand]) => (
-                        <Typography key={day}>
-                            {day}: {demand} units
-                        </Typography>
-                    ))}
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={formatForecastData()}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="day" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="demand" stroke="#8884d8" />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </Box>
             )}
         </Box>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Button,Box, CircularProgress, Typography } from '@mui/material';
+import { Button, Box, CircularProgress, Typography } from '@mui/material';
 import axios from 'axios';
 
 const TrainForecast = () => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
-    
+
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
     };
@@ -24,9 +24,15 @@ const TrainForecast = () => {
         formData.append('file', file);
 
         try {
+            const token = localStorage.getItem('token'); // Get JWT token from storage
+
             const response = await axios.post('http://localhost:5000/train_arima', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}` // Include JWT token
+                }
             });
+
             setMessage(response.data.message);
         } catch (error) {
             setMessage(error.response?.data?.error || 'Error training the model');
@@ -50,7 +56,7 @@ const TrainForecast = () => {
                     {loading ? <CircularProgress size={24} /> : 'Train Model'}
                 </Button>
             </Box>
-            {message && <Typography sx={{ marginTop: 2 }}>{message}</Typography>}
+            {message && <Typography sx={{ marginTop: 2, color: 'red' }}>{message}</Typography>}
         </Box>
     );
 };

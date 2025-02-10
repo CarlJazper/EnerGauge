@@ -1,5 +1,6 @@
 import pickle
 import os
+from config.db import mongo
 
 MODEL_PATH = "models/trainedDataForecast/arima_model.pkl"
 SCALER_PATH = "models/trainedDataForecast/scaler.pkl"
@@ -23,3 +24,8 @@ def load_model():
         scaler = pickle.load(scaler_file)
     
     return model, scaler
+
+def get_forecast_history():
+    """Retrieve all stored forecasts for dashboard trends."""
+    forecasts = list(mongo.db.forecasts.find({}, {"_id": 0}))  # Exclude ObjectId
+    return forecasts
