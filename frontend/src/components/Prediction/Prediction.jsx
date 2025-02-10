@@ -29,18 +29,27 @@ const Prediction = () => {
   const handlePredict = async () => {
     setError("");
     try {
+      const token = localStorage.getItem("token"); // Get JWT token
       let response;
+
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
         response = await axios.post("http://localhost:5000/predict", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
         });
       } else {
         response = await axios.post("http://localhost:5000/predict", manualInput, {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
+
       setPrediction(response.data);
     } catch (err) {
       setError(err.response?.data?.error || "Prediction error.");
@@ -77,7 +86,9 @@ const Prediction = () => {
         <div>
           <h3>Prediction Results</h3>
           {prediction.map((pred, index) => (
-            <p key={index}><strong>Predicted Consumption:</strong> {pred.predicted_consumption.toFixed(2)}</p>
+            <p key={index}>
+              <strong>Predicted Consumption:</strong> {pred.predicted_consumption.toFixed(2)}
+            </p>
           ))}
         </div>
       )}

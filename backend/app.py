@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from routes.predictionRoutes import prediction_bp
-from routes.trainingRoutes import training_bp
+from routes.energyRoutes import energy_bp
 from routes.forecastRoutes import forecast_bp
 from routes.userRoutes import user_bp
 from config.db import init_app
@@ -12,8 +11,7 @@ CORS(app)
 # Initialize DB
 init_app(app)
 
-app.register_blueprint(prediction_bp)
-app.register_blueprint(training_bp)
+app.register_blueprint(energy_bp)
 app.register_blueprint(forecast_bp)
 
 # Register routes

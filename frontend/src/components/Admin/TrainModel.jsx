@@ -22,9 +22,15 @@ const TrainModel = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:5000/train", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const token = localStorage.getItem("token"); // Get JWT token
+
+      const response = await axios.post("http://localhost:5000/train_rfr", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // Include JWT token
+        },
       });
+
       setMetrics(response.data.metrics);
     } catch (err) {
       setError(err.response?.data?.error || "An error occurred while training.");
