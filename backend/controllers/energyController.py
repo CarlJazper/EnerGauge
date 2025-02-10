@@ -24,6 +24,10 @@ def train():
     except Exception as e:
         return jsonify({"error": f"Error reading file: {str(e)}"}), 400
 
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors='coerce')
+        df["Timestamp"] = df["Timestamp"].astype(int) // 10**9  # Convert to Unix timestamp
+
     required_columns = [
         "Temperature", "Humidity", "SquareFootage", "Occupancy",
         "HVACUsage", "LightingUsage", "RenewableEnergy",
@@ -84,6 +88,10 @@ def predict():
             df = pd.DataFrame([data])
         except Exception as e:
             return jsonify({"error": f"Invalid input format: {str(e)}"}), 400
+
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors='coerce')
+        df["Timestamp"] = df["Timestamp"].astype(int) // 10**9
 
     trained_columns = joblib.load("models/trainedData/columns.pkl")
     required_columns = [
