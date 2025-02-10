@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Button, Box, CircularProgress, Typography } from '@mui/material';
-import axios from 'axios';
+import React, { useState } from "react";
+import { Button, Box, CircularProgress, Typography } from "@mui/material";
+import axios from "axios";
 
 const TrainForecast = () => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState("");
 
     const handleFileChange = (event) => {
         setFile(event.target.files[0]);
@@ -13,38 +13,38 @@ const TrainForecast = () => {
 
     const handleSubmit = async () => {
         if (!file) {
-            setMessage('Please upload a CSV file.');
+            setMessage("Please upload a CSV file.");
             return;
         }
 
         setLoading(true);
-        setMessage('');
+        setMessage("");
 
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append("file", file);
 
         try {
-            const token = localStorage.getItem('token'); // Get JWT token from storage
+            const token = localStorage.getItem("token");
 
-            const response = await axios.post('http://localhost:5000/train_arima', formData, {
+            const response = await axios.post("http://localhost:5000/train_arima", formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}` // Include JWT token
-                }
+                    "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`,
+                },
             });
 
             setMessage(response.data.message);
         } catch (error) {
-            setMessage(error.response?.data?.error || 'Error training the model');
+            setMessage(error.response?.data?.error || "Error training the model");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Box sx={{ padding: 2 }}>
+        <Box sx={{ padding: 3 }}>
             <Typography variant="h5" gutterBottom>
-                Train ARIMA Model
+                Train Energy Forecasting Model
             </Typography>
             <input type="file" onChange={handleFileChange} />
             <Box sx={{ marginTop: 2 }}>
@@ -53,10 +53,12 @@ const TrainForecast = () => {
                     onClick={handleSubmit}
                     disabled={loading}
                 >
-                    {loading ? <CircularProgress size={24} /> : 'Train Model'}
+                    {loading ? <CircularProgress size={24} /> : "Train Model"}
                 </Button>
             </Box>
-            {message && <Typography sx={{ marginTop: 2, color: 'red' }}>{message}</Typography>}
+            {message && (
+                <Typography sx={{ marginTop: 2, color: "red" }}>{message}</Typography>
+            )}
         </Box>
     );
 };

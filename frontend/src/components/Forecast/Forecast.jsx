@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Button, TextField, Box, Typography } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import axios from 'axios';
+import React, { useState } from "react";
+import { Button, TextField, Box, Typography } from "@mui/material";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import axios from "axios";
 
 const Forecast = () => {
     const [days, setDays] = useState(7);
-    const [forecast, setForecast] = useState(null);
+    const [forecastData, setForecastData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
 
     const handleDaysChange = (event) => {
         setDays(event.target.value);
@@ -15,34 +15,37 @@ const Forecast = () => {
 
     const handleSubmit = async () => {
         setLoading(true);
-        setError('');
-        setForecast(null);
+        setError("");
+        setForecastData(null);
 
         try {
-            const response = await axios.get('http://localhost:5000/predict_demand', {
+            const response = await axios.get("http://localhost:5000/predict_energy", {
                 params: { days },
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
-            setForecast(response.data.predictions);
+
+            setForecastData(response.data);
         } catch (err) {
-            setError(err.response?.data?.message || 'Error fetching predictions');
+            setError(err.response?.data?.message || "Error fetching predictions");
         } finally {
             setLoading(false);
         }
     };
 
     const formatForecastData = () => {
-        if (!forecast) return [];
-        return forecast.map((demand, index) => ({
+        if (!forecastData) return [];
+
+        return forecastData.forecast_energy.map((consumption, index) => ({
             day: `Day ${index + 1}`,
-            demand: Number(demand)
+            energyConsumption: Number(consumption),
+            energySavings: Number(forecastData.energy_savings[index]),
         }));
     };
 
     return (
-        <Box sx={{ padding: 2 }}>
+        <Box sx={{ padding: 3 }}>
             <Typography variant="h5" gutterBottom>
-                Demand Forecast
+                Energy Forecasting
             </Typography>
             <TextField
                 label="Days to Forecast"
@@ -57,19 +60,25 @@ const Forecast = () => {
                 onClick={handleSubmit}
                 disabled={loading}
             >
-                {loading ? 'Loading...' : 'Get Forecast'}
+                {loading ? "Loading..." : "Get Forecast"}
             </Button>
             {error && <Typography color="error" sx={{ marginTop: 2 }}>{error}</Typography>}
-            {forecast && (
-                <Box sx={{ marginTop: 2 }}>
+
+            {forecastData && (
+                <Box sx={{ marginTop: 3 }}>
                     <Typography variant="h6">Forecast Results:</Typography>
+                    <Typography variant="body1">
+                        <strong>Estimated Peak Load:</strong> {forecastData.peak_load} kW
+                    </Typography>
+
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={formatForecastData()}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="day" />
                             <YAxis />
                             <Tooltip />
-                            <Line type="monotone" dataKey="demand" stroke="#8884d8" />
+                            <Line type="monotone" dataKey="energyConsumption" stroke="#8884d8" name="Energy Consumption" />
+                            <Line type="monotone" dataKey="energySavings" stroke="#82ca9d" name="Energy Savings" />
                         </LineChart>
                     </ResponsiveContainer>
                 </Box>
