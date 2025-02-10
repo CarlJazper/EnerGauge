@@ -31,10 +31,13 @@ const Login = () => {
 
       // Redirect based on role
       if (role === 'admin') {
-        navigate('/admin/dashboard');
+       navigate('/admin/dashboard');
+      } else if (role === 'user') {
+       navigate('/dashboard'); // Redirect users to their dashboard
       } else {
-        navigate('/');
+       navigate('/'); // Default redirect for guests
       }
+
     } catch (error) {
       setMessage(error.response?.data.message || "Something went wrong");
     } finally {

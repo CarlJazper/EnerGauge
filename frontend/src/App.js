@@ -13,6 +13,7 @@ import Profile from "./components/User/Profile";
 import UpdateProfile from "./components/User/UpdateProfile";
 import TrainForecast from "./components/Admin/TrainForecast";
 import Forecast from "./components/Forecast/Forecast";
+import UserDashboard from "./components/User/Dashboard";
 
 function App() {
   return (
@@ -23,16 +24,57 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        <Route path="/profile" element={<Profile/>}/>
-        <Route path="/profile/update" element={<UpdateProfile/>}/>
-        
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <Profile/>
+            </ProtectedRoute>
+         } 
+        />
+
+        <Route 
+        path="/profile/update" 
+        element={
+            <ProtectedRoute>
+              <UpdateProfile/>
+            </ProtectedRoute>
+        }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+
         <Route 
         path="/forecast" 
         element={
           <ProtectedRoute>
             <Forecast/>
           </ProtectedRoute>
-          }/>
+        }/>
+
+        <Route 
+        path="/prediction" 
+        element={
+          <ProtectedRoute>
+            <Prediction/>
+          </ProtectedRoute>
+        }/>
+
+        <Route
+          path="admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         <Route 
         path="admin/train_arima" 
@@ -43,15 +85,6 @@ function App() {
         }/>
 
         <Route
-          path="/prediction"
-          element={
-            <ProtectedRoute>
-              <Prediction />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="admin/train"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
@@ -59,15 +92,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="admin/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-          />
 
       </Routes>
     </Router>

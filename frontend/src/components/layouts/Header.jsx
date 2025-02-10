@@ -53,21 +53,27 @@ const Header = () => {
 
   // Define nav links based on user role
   const navLinks =
-    role === 'admin'
-      ? [
-          { name: 'Dashboard', path: '/admin/dashboard' },
-          { name: 'Train Energy Model', path: '/admin/train' },
-          { name: 'Train Forecast Model', path: '/admin/train_arima' },
-        ]
-      : [
-          { name: 'Home', path: '/' },
-          ...(isLoggedIn && role === 'user'
-            ? [{ name: 'Prediction', path: '/prediction' },
-               { name: 'Forecast', path: '/forecast' },
-              ] // Add "Prediction" for logged-in users
-            : []),
-          { name: 'About Us', path: '/about' },
-        ];
+  role === 'admin'
+    ? [
+        { name: 'Dashboard', path: '/admin/dashboard' },
+        { name: 'Train Energy Model', path: '/admin/train' },
+        { name: 'Train Forecast Model', path: '/admin/train_arima' },
+      ]
+    : [
+        ...(isLoggedIn && role === 'user'
+          ? [{ name: 'Dashboard', path: '/dashboard' }] // Show "Dashboard" instead of "Home"
+          : [{ name: 'Home', path: '/' }]), // Show "Home" for guests
+
+        ...(isLoggedIn && role === 'user'
+          ? [
+              { name: 'Prediction', path: '/prediction' },
+              { name: 'Forecast', path: '/forecast' },
+            ]
+          : []),
+
+        { name: 'About Us', path: '/about' },
+      ];
+
 
   return (
     <AppBar position="static" sx={{backgroundColor: "#DDEB9D"}}>

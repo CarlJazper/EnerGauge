@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Loader from './layouts/Loader';
+import Loader from '../layouts/Loader';
 import { Typography} from '@mui/material';
 
 
@@ -19,7 +19,7 @@ const Home = () => {
   return (
   
     <Typography sx={{ fontSize:'20px',textAlign:'center',pt:'15rem' }}>
-      EnerGauge
+      This is a User Dashboard
     </Typography>
    
   );
