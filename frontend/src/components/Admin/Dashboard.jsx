@@ -54,7 +54,7 @@ const Dashboard = () => {
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Total Predictions</Typography>
+              <Typography variant="h6">Total Forecast Prediction</Typography>
               <Typography variant="h4">{totalPredictions}</Typography>
             </CardContent>
           </Card>
