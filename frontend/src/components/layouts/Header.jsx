@@ -56,8 +56,8 @@ const Header = () => {
   role === 'admin'
     ? [
         { name: 'Dashboard', path: '/admin/dashboard' },
-        { name: 'Train Energy Model', path: '/admin/train' },
-        { name: 'Train Forecast Model', path: '/admin/train_arima' },
+        { name: 'RFR Model', path: '/admin/train' },
+        { name: 'Arima Model', path: '/admin/train_arima' },
       ]
     : [
         ...(isLoggedIn && role === 'user'
