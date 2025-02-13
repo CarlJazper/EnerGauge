@@ -60,7 +60,7 @@ def train_arima():
     return jsonify({"message": "ARIMA model trained successfully on energy data."})
   
 @token_required  
-def predict_energy():
+def predict_forecast():
     model, scaler = load_model()
     if model is None:
         return jsonify({"error": "No trained model found."}), 400

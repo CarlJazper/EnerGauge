@@ -19,7 +19,7 @@ const Forecast = () => {
         setForecastData(null);
 
         try {
-            const response = await axios.get("http://localhost:5000/predict_energy", {
+            const response = await axios.get("http://localhost:5000/predict_forecast", {
                 params: { days },
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
