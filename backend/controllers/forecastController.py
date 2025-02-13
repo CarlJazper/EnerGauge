@@ -44,41 +44,41 @@ def train_arima():
     df["Holiday"] = df["Holiday"].map({"Yes": 1, "No": 0})
     df["DayOfWeek"] = pd.Categorical(df["DayOfWeek"]).codes  # Convert to numerical
 
-    # Scale features
-    feature_cols = ["Temperature", "Humidity", "SquareFootage", "Occupancy",
-                    "HVACUsage", "LightingUsage", "RenewableEnergy", "DayOfWeek", "Holiday"]
-    
+    # Scale only the target variable (EnergyConsumption)
     scaler = MinMaxScaler()
-    df[feature_cols] = scaler.fit_transform(df[feature_cols])
+    df["EnergyConsumption"] = scaler.fit_transform(df[["EnergyConsumption"]])
 
-    # Train ARIMA model on EnergyConsumption
+    # Train ARIMA model
     model = ARIMA(df["EnergyConsumption"], order=(5,1,0))
     fitted_model = model.fit()
 
     save_model(fitted_model, scaler)
     
     return jsonify({"message": "ARIMA model trained successfully on energy data."})
-  
+
 @token_required  
 def predict_forecast():
     model, scaler = load_model()
     if model is None:
         return jsonify({"error": "No trained model found."}), 400
 
-    days = int(request.args.get("days", 7))  
+    try:
+        days = int(request.args.get("days", 7))
+    except ValueError:
+        return jsonify({"error": "Invalid number of days."}), 400  
 
     # Forecast energy consumption for given days
     forecast = model.forecast(steps=days)
-    forecast = scaler.inverse_transform(np.array(forecast).reshape(-1, 1) * np.ones((1, scaler.n_features_in_))).flatten()
 
-    # Fix for RenewableEnergy inverse transform issue
-    sample_input = np.zeros((1, scaler.n_features_in_))  # Create a dummy input with 9 features
-    sample_input[0, 6] = 0.5  # Assuming 'RenewableEnergy' is the 7th feature (index 6)
-    
-    avg_renewable = np.mean(scaler.inverse_transform(sample_input)[:, 6])  # Extract RenewableEnergy value
+    # Inverse transform ONLY the EnergyConsumption variable
+    forecast = scaler.inverse_transform(forecast.to_numpy().reshape(-1, 1)).flatten()
+
+    # Ensure reasonable values
+    forecast = np.maximum(forecast, 0)  # Avoid negative predictions
 
     # Calculate estimated energy savings
-    energy_savings = forecast * (avg_renewable / 100)
+    avg_renewable_energy = np.mean(forecast) * 0.1  # Example: Assuming 10% avg savings
+    energy_savings = forecast * (avg_renewable_energy / 100)
 
     # Peak load prediction (max forecasted energy consumption)
     peak_load = max(forecast)
@@ -100,7 +100,6 @@ def predict_forecast():
         "peak_load": forecast_entry["peak_load"]
     })
 
-
 @token_required
 def get_forecast_trends():
     """Fetch all forecast history for the admin dashboard."""
@@ -115,16 +114,10 @@ def get_forecast_trends():
         forecast["user_id"] = str(forecast["user_id"])
         
         # Format timestamp properly
-        if "timestamp" in forecast and forecast["timestamp"]:
-            forecast["timestamp"] = forecast["timestamp"].isoformat()
-        else:
-            forecast["timestamp"] = None  # Handle missing timestamps
+        forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
 
-        # Ensure forecast_energy is a sum instead of an array
-        if "forecast_energy" in forecast and isinstance(forecast["forecast_energy"], list):
-            forecast["total_forecast_energy"] = round(sum(forecast["forecast_energy"]), 2)
-        else:
-            forecast["total_forecast_energy"] = 0  # Default value
+        # Ensure forecast_energy is correctly formatted
+        forecast["total_forecast_energy"] = round(sum(forecast.get("forecast_energy", [])), 2)
 
         # Ensure peak_load is handled properly
         forecast["peak_load"] = round(forecast.get("peak_load", 0), 2)
