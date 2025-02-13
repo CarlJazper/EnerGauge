@@ -38,88 +38,97 @@ def train_arima():
     df.set_index("Timestamp", inplace=True)
     df = df.sort_index()
     
-    # Convert categorical columns
     df["HVACUsage"] = df["HVACUsage"].map({"On": 1, "Off": 0})
     df["LightingUsage"] = df["LightingUsage"].map({"On": 1, "Off": 0})
     df["Holiday"] = df["Holiday"].map({"Yes": 1, "No": 0})
-    df["DayOfWeek"] = pd.Categorical(df["DayOfWeek"]).codes  # Convert to numerical
+    df["DayOfWeek"] = pd.Categorical(df["DayOfWeek"]).codes
 
-    # Scale only the target variable (EnergyConsumption)
     scaler = MinMaxScaler()
-    df["EnergyConsumption"] = scaler.fit_transform(df[["EnergyConsumption"]])
+    feature_columns = [
+        "Temperature", "Humidity", "SquareFootage", "Occupancy",
+        "HVACUsage", "LightingUsage", "RenewableEnergy", "DayOfWeek", "Holiday"
+    ]
+    df[feature_columns] = scaler.fit_transform(df[feature_columns])
+    energy_scaler = MinMaxScaler()
+    df["EnergyConsumption"] = energy_scaler.fit_transform(df[["EnergyConsumption"]])
 
-    # Train ARIMA model
     model = ARIMA(df["EnergyConsumption"], order=(5,1,0))
     fitted_model = model.fit()
 
-    save_model(fitted_model, scaler)
+    save_model(fitted_model, energy_scaler)
     
-    return jsonify({"message": "ARIMA model trained successfully on energy data."})
+    return jsonify({"message": "ARIMA model trained successfully."})
 
 @token_required  
 def predict_forecast():
-    model, scaler = load_model()
+    model, energy_scaler = load_model()
     if model is None:
         return jsonify({"error": "No trained model found."}), 400
 
     try:
-        days = int(request.args.get("days", 7))
-    except ValueError:
-        return jsonify({"error": "Invalid number of days."}), 400  
+        data = request.get_json()
+        future_timestamps = data.get("timestamps", [])
+        feature_inputs = data.get("features", [])
+    except Exception as e:
+        return jsonify({"error": f"Invalid input: {str(e)}"}), 400
 
-    # Forecast energy consumption for given days
-    forecast = model.forecast(steps=days)
+    if not future_timestamps or not feature_inputs or len(future_timestamps) != len(feature_inputs):
+        return jsonify({"error": "Provide matching timestamps and feature values."}), 400
 
-    # Inverse transform ONLY the EnergyConsumption variable
-    forecast = scaler.inverse_transform(forecast.to_numpy().reshape(-1, 1)).flatten()
+    future_dates = pd.to_datetime(future_timestamps)
+    feature_df = pd.DataFrame(feature_inputs)
 
-    # Ensure reasonable values
-    forecast = np.maximum(forecast, 0)  # Avoid negative predictions
+    required_features = ["Temperature", "Humidity", "SquareFootage", "Occupancy",
+                         "HVACUsage", "LightingUsage", "RenewableEnergy", "DayOfWeek", "Holiday"]
 
-    # Calculate estimated energy savings
-    avg_renewable_energy = np.mean(forecast) * 0.1  # Example: Assuming 10% avg savings
+    if not all(col in feature_df.columns for col in required_features):
+        return jsonify({"error": f"Missing required feature columns: {required_features}"}), 400
+
+    feature_df["HVACUsage"] = feature_df["HVACUsage"].map({"On": 1, "Off": 0})
+    feature_df["LightingUsage"] = feature_df["LightingUsage"].map({"On": 1, "Off": 0})
+    feature_df["Holiday"] = feature_df["Holiday"].map({"Yes": 1, "No": 0})
+    feature_df["DayOfWeek"] = pd.Categorical(feature_df["DayOfWeek"]).codes
+
+    forecast = model.forecast(steps=len(feature_df))
+    forecast = energy_scaler.inverse_transform(np.array(forecast).reshape(-1, 1)).flatten()
+    forecast = np.maximum(forecast, 0)
+
+    avg_renewable_energy = np.mean(feature_df["RenewableEnergy"])
     energy_savings = forecast * (avg_renewable_energy / 100)
-
-    # Peak load prediction (max forecasted energy consumption)
     peak_load = max(forecast)
 
-    # Save forecast results
     forecast_entry = {
         "user_id": ObjectId(g.user_id),
         "timestamp": datetime.datetime.utcnow(),
-        "days": days,
-        "forecast_energy": list(map(lambda x: round(x, 2), forecast)),
-        "energy_savings": list(map(lambda x: round(x, 2), energy_savings)),
+        "forecast_data": [
+            {
+                "timestamp": ts.isoformat(),
+                "forecast_energy": round(energy, 2),
+                "energy_savings": round(savings, 2)
+            }
+            for ts, energy, savings in zip(future_dates, forecast, energy_savings)
+        ],
         "peak_load": round(peak_load, 2)
     }
     mongo.db.forecasts.insert_one(forecast_entry)
 
     return jsonify({
-        "forecast_energy": forecast_entry["forecast_energy"],
-        "energy_savings": forecast_entry["energy_savings"],
+        "forecast_data": forecast_entry["forecast_data"],
         "peak_load": forecast_entry["peak_load"]
     })
 
 @token_required
 def get_forecast_trends():
-    """Fetch all forecast history for the admin dashboard."""
-    if g.role != "admin":  # Ensure only admins can view trends
+    if g.role != "admin":
         return jsonify({"error": "Unauthorized"}), 403
 
-    forecasts = list(mongo.db.forecasts.find({}, {"_id": 1, "user_id": 1, "timestamp": 1, "forecast_energy": 1, "peak_load": 1}))
+    forecasts = list(mongo.db.forecasts.find({}, {"_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
 
-    # Convert ObjectId to string and ensure proper formatting
     for forecast in forecasts:
         forecast["_id"] = str(forecast["_id"])
         forecast["user_id"] = str(forecast["user_id"])
-        
-        # Format timestamp properly
         forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
-
-        # Ensure forecast_energy is correctly formatted
-        forecast["total_forecast_energy"] = round(sum(forecast.get("forecast_energy", [])), 2)
-
-        # Ensure peak_load is handled properly
+        forecast["total_forecast_energy"] = round(sum(entry["forecast_energy"] for entry in forecast.get("forecast_data", [])), 2)
         forecast["peak_load"] = round(forecast.get("peak_load", 0), 2)
 
     return jsonify(forecasts)
