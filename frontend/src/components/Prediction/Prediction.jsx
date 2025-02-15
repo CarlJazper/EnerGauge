@@ -5,13 +5,13 @@ import axios from "axios";
 const Prediction = () => {
   const [file, setFile] = useState(null);
   const [manualInput, setManualInput] = useState({
-    Temperature: 20, // Default reasonable values
-    Humidity: 50,
-    SquareFootage: 1000,
-    Occupancy: 5,
+    Temperature: 0, // Default reasonable values
+    Humidity: 0,
+    SquareFootage: 0,
+    Occupancy: 0,
     HVACUsage: "Off",
     LightingUsage: "Off",
-    RenewableEnergy: 10,
+    RenewableEnergy: 0,
     DayOfWeek: "Monday",
     Holiday: "No",
   });

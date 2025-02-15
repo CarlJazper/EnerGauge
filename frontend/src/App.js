@@ -14,6 +14,7 @@ import UpdateProfile from "./components/User/UpdateProfile";
 import TrainForecast from "./components/Admin/TrainForecast";
 import Forecast from "./components/Forecast/Forecast";
 import UserDashboard from "./components/User/Dashboard";
+import About from "./components/About";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<Home />}/>
+        <Route path="/about" element={<About/>}/>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 

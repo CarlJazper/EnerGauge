@@ -122,13 +122,48 @@ def get_forecast_trends():
     if g.role != "admin":
         return jsonify({"error": "Unauthorized"}), 403
 
-    forecasts = list(mongo.db.forecasts.find({}, {"_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
+    # Pagination parameters
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+    skip = (page - 1) * per_page
+
+    # Fetch forecasts with pagination
+    forecasts = list(mongo.db.forecasts.find({}, {"_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1, "peak_load": 1})
+                        .skip(skip)
+                        .limit(per_page))
+
+    total_forecasts = mongo.db.forecasts.count_documents({})
+
+    # Calculate additional metrics
+    total_energy = 0
+    total_energy_savings = 0
+    peak_loads = []
 
     for forecast in forecasts:
         forecast["_id"] = str(forecast["_id"])
         forecast["user_id"] = str(forecast["user_id"])
         forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
+        
+        # Total energy forecasted is the sum of energy consumption for all days forecasted by the user
         forecast["total_forecast_energy"] = round(sum(entry["forecast_energy"] for entry in forecast.get("forecast_data", [])), 2)
+        
+        # Total energy savings is the sum of energy savings for all days forecasted by the user
+        forecast["total_energy_savings"] = round(sum(entry["energy_savings"] for entry in forecast.get("forecast_data", [])), 2)
+        
         forecast["peak_load"] = round(forecast.get("peak_load", 0), 2)
 
-    return jsonify(forecasts)
+        total_energy += forecast["total_forecast_energy"]
+        total_energy_savings += forecast["total_energy_savings"]
+        peak_loads.append(forecast["peak_load"])
+
+    average_peak_load = round(np.mean(peak_loads), 2) if peak_loads else 0
+
+    return jsonify({
+        "forecasts": forecasts,
+        "total_forecasts": total_forecasts,
+        "total_energy": round(total_energy, 2),  # Sum of energy consumption for all days forecasted by all users
+        "total_energy_savings": round(total_energy_savings, 2),
+        "average_peak_load": average_peak_load,
+        "page": page,
+        "per_page": per_page
+    })
