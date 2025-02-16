@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Container, Typography, Grid, Card, CardContent, Pagination, Tooltip } from "@mui/material";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, } from "recharts";
 import Loader from "../layouts/Loader";
 import axios from "axios";
 import { EnergySavingsLeaf, TrendingUp, Bolt, Savings, Info } from "@mui/icons-material";
@@ -13,7 +13,7 @@ const Dashboard = () => {
   const [totalEnergySavings, setTotalEnergySavings] = useState(0);
   const [averagePeakLoad, setAveragePeakLoad] = useState(0);
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [perPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {

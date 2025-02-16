@@ -5,13 +5,16 @@ import Home from "./components/Home";
 import Header from "./components/layouts/Header";
 import Login from "./components/User/Login";
 import Register from "./components/User/Register";
-import TrainModel from './components/Admin/TrainModel';
+
+import TrainModel from './components/Admin/Training/TrainModel';
+import TrainForecast from "./components/Admin/Training/TrainForecast";
+
 import Prediction from './components/Prediction/Prediction';
 import ProtectedRoute from "./components/utils/protectedRoute";
 import AdminDashboard from './components/Admin/Dashboard';
 import Profile from "./components/User/Profile";
 import UpdateProfile from "./components/User/UpdateProfile";
-import TrainForecast from "./components/Admin/TrainForecast";
+
 import Forecast from "./components/Forecast/Forecast";
 import UserDashboard from "./components/User/Dashboard";
 import About from "./components/About";
