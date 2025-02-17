@@ -32,7 +32,7 @@ const Register = () => {
       localStorage.setItem('role', role);
 
       // Redirect to home or dashboard after successful registration
-      navigate('/'); 
+      navigate('/dashboard'); 
     } catch (error) {
       setMessage(error.response?.data.message || "Something went wrong");
     }

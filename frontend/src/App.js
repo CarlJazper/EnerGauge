@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route} from "react-router-dom";
 
 import Home from "./components/Home";
-import Header from "./components/layouts/Header";
+import Header from "./components/layouts/User/Header";
 import Login from "./components/User/Login";
 import Register from "./components/User/Register";
 
@@ -18,6 +18,11 @@ import UpdateProfile from "./components/User/UpdateProfile";
 import Forecast from "./components/Forecast/Forecast";
 import UserDashboard from "./components/User/Dashboard";
 import About from "./components/About";
+
+import AdminLayout from "./components/layouts/Admin/AdminLayout"; // New Layout
+import RecentForecast from "./components/Admin/Forecast/RecentForecast";
+import UserList from "./components/Admin/User/UserList";
+import UserUpdate from "./components/Admin/User/UserUpdate";
 
 function App() {
   return (
@@ -72,31 +77,22 @@ function App() {
           </ProtectedRoute>
         }/>
 
-        <Route
-          path="admin/dashboard"
+{/* Admin Routes */}
+      <Route
+          path="/admin"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
-
-        <Route 
-        path="admin/train_arima" 
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-              <TrainForecast/>  
-          </ProtectedRoute>
-        }/>
-
-        <Route
-          path="admin/train"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <TrainModel/>
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<UserList />} />
+          <Route path="update_user/:id" element={<UserUpdate />} />
+          <Route path="train_arima" element={<TrainForecast />} />
+          <Route path="train" element={<TrainModel />} />
+          <Route path="recent_forecast" element={<RecentForecast />} />
+        </Route>
 
       </Routes>
     </Router>

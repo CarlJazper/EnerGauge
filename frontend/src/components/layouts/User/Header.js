@@ -21,7 +21,7 @@ const Header = () => {
       setRole('');
     }
   }, [location.pathname]); // Runs effect when the route changes
-
+  if (role === 'admin') return null;
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
@@ -52,12 +52,11 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   // Define nav links based on user role
-  const navLinks =
+// Define nav links based on user role
+const navLinks =
   role === 'admin'
     ? [
-        { name: 'Dashboard', path: '/admin/dashboard' },
-        { name: 'RFR Model', path: '/admin/train' },
-        { name: 'Arima Model', path: '/admin/train_arima' },
+        // Admin-specific links (if any)
       ]
     : [
         ...(isLoggedIn && role === 'user'
@@ -71,7 +70,8 @@ const Header = () => {
             ]
           : []),
 
-        { name: 'About Us', path: '/about' },
+        // Show "About Us" only if the user is NOT logged in
+        ...(!isLoggedIn ? [{ name: 'About Us', path: '/about' }] : []),
       ];
 
 

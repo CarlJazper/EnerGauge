@@ -115,3 +115,62 @@ def login_user():
     token = generate_jwt(user["_id"], role)
 
     return jsonify({"message": "Login successful", "token": token}), 200
+
+
+# Get all users
+@token_required
+def get_all_users():
+    """Get all users"""
+    users = mongo.db.users.find({}, {"password": 0})  # Exclude password field
+
+    users_list = []
+    for user in users:
+        user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
+        users_list.append(user)
+
+    return jsonify(users_list), 200
+
+# Get user by ID
+@token_required
+def get_user(user_id):
+    """Get user details by ID"""
+    user = mongo.db.users.find_one({"_id": ObjectId(user_id)}, {"password": 0})  # Exclude password field
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
+    return jsonify(user), 200
+
+# Update user by ID
+@token_required
+def update_user():
+    """Update user details by ID"""
+    user_id = g.user_id
+    data = request.get_json()
+
+    # Only allow updates to certain fields
+    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
+    update_data = {field: data[field] for field in allowed_fields if field in data}
+
+    if not update_data:
+        return jsonify({"message": "No valid fields to update"}), 400
+
+    result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+
+    if result.modified_count == 0:
+        return jsonify({"message": "No changes made"}), 200
+
+    return jsonify({"message": "User updated successfully"}), 200
+
+
+# Delete user by ID
+@token_required
+def delete_user(user_id):
+    """Delete user by ID"""
+    result = mongo.db.users.delete_one({"_id": ObjectId(user_id)})
+
+    if result.deleted_count == 0:
+        return jsonify({"message": "User not found"}), 404
+
+    return jsonify({"message": "User deleted successfully"}), 200
