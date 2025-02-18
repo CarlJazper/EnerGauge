@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Box, Container } from "@mui/material";
+import { Typography, Box, Container, Grid } from "@mui/material";
 import { motion } from "framer-motion";
 
 const AboutUs = () => {
@@ -41,14 +41,38 @@ const AboutUs = () => {
         transition={{ delay: 1, duration: 1 }}
       >
         <Typography variant="h4" sx={{ mt: 5, fontWeight: "bold", color: "#2E7D32" }}>
-          Our Values
+          Our Team
         </Typography>
-        <Typography variant="body1" sx={{ mt: 2, maxWidth: "800px", color: "#555" }}>
-          - Sustainability: Promoting responsible energy consumption.
-          <br />- Innovation: Using technology to drive efficiency.
-          <br />- Accuracy: Providing reliable energy forecasts.
-          <br />- Customer Focus: Tailoring solutions to user needs.
-        </Typography>
+        <Grid container spacing={4} justifyContent="center" sx={{ mt: 3 }}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="Person 1"
+              sx={{ width: "100%", maxWidth: "200px", borderRadius: "50%" }}
+            />
+            <Typography variant="h6" sx={{ mt: 2, fontWeight: "bold", color: "#2E7D32" }}>
+              Person 1
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#555" }}>
+              Co-Founder & CEO
+            </Typography>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Box
+              component="img"
+              src="/images/logo.png"
+              alt="Person 2"
+              sx={{ width: "100%", maxWidth: "200px", borderRadius: "50%" }}
+            />
+            <Typography variant="h6" sx={{ mt: 2, fontWeight: "bold", color: "#2E7D32" }}>
+              Person 2
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#555" }}>
+              Co-Founder & CTO
+            </Typography>
+          </Grid>
+        </Grid>
       </motion.div>
     </Container>
   );

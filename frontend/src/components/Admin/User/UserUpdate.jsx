@@ -30,13 +30,13 @@ const UserUpdate = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     axios
-      .put(`http://localhost:5000/api/users/update`, user, {
+      .put(`http://localhost:5000/api/users/update/${id}`, user, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
       .then(() => {
-        navigate("admin/users");
+        navigate("/admin/users");
       })
       .catch((error) => {
         console.error("Error updating user", error);

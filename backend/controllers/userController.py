@@ -144,9 +144,8 @@ def get_user(user_id):
 
 # Update user by ID
 @token_required
-def update_user():
+def update_user(user_id):
     """Update user details by ID"""
-    user_id = g.user_id
     data = request.get_json()
 
     # Only allow updates to certain fields

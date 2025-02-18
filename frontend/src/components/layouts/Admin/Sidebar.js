@@ -31,7 +31,7 @@ const AdminSidebar = ({ open, setOpen }) => {
           height: "100vh",
           display: "flex",
           flexDirection: "column",
-          backgroundColor: "#1e1e2f",
+          backgroundColor: "#383560",
           color: "white",
         },
       }}
@@ -73,7 +73,7 @@ const AdminSidebar = ({ open, setOpen }) => {
               {open && (
                 <ListItemText
                   primary={
-                    <Typography sx={{ fontWeight: 500, fontSize: "14px" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "14px" }}>
                       {item.text}
                     </Typography>
                   }

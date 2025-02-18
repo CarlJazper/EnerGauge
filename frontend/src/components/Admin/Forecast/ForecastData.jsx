@@ -61,19 +61,34 @@ const Forecast = () => {
           tooltip: "Average peak load across all forecasts"
         }].map((item, index) => (
           <Grid item xs={12} md={3} key={index}>
-            <Card sx={{ display: "flex", alignItems: "center", p: 2, boxShadow: 3, borderRadius: 2 }}>
-              {item.icon}
-              <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: "medium" }}>
-                  {item.title}
-                  <Tooltip title={item.tooltip}>
-                    <Info fontSize="small" sx={{ ml: 1, color: "text.secondary" }} />
-                  </Tooltip>
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: "bold" }}>{item.value}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Card
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "space-between",
+                p: 2,
+                boxShadow: 3,
+                borderRadius: 2,
+                height: 150, // Fixed height to ensure uniformity
+              }}
+          >
+          {item.icon}
+          <CardContent sx={{ textAlign: "center", flexGrow: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "medium", fontSize: "0.9rem" }}>
+              {item.title}
+              {item.tooltip && (
+               <Tooltip title={item.tooltip}>
+                 <Info fontSize="small" sx={{ ml: 1, color: "text.secondary" }} />
+               </Tooltip>
+               )}
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+               {item.value}
+             </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
         ))}
       </Grid>
 

@@ -10,5 +10,5 @@ user_bp.route('/profile/update', methods=['PUT'])(update_user_profile)
 # New routes
 user_bp.route('/userslist', methods=['GET'])(get_all_users)  # Get all users
 user_bp.route('/usersdata/<user_id>', methods=['GET'])(get_user)
-user_bp.route('/update', methods=['PUT'])(update_user)  # Update user by ID
+user_bp.route('/update/<user_id>', methods=['PUT'])(update_user)  # Update user by ID
 user_bp.route('/delete/<user_id>', methods=['DELETE'])(delete_user)  # Delete user by ID

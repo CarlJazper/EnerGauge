@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, Box, Container, IconButton, Menu, MenuItem, Avatar } from '@mui/material';
+import { AppBar, Toolbar, Button, Box, Container, IconButton, Menu, MenuItem, Avatar, Typography } from '@mui/material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
@@ -41,8 +41,8 @@ const Header = () => {
 
   // Define nav link styles
   const navLinkStyle = {
-    color: '#143D60',
-    fontSize: '1rem',
+    color: '#6BC72A',
+    fontSize: '1.2rem',
     fontWeight: 'bold',
     textTransform: 'none',
     '&:hover': { color: '#27667B', opacity: 0.7 },
@@ -76,7 +76,7 @@ const navLinks =
 
 
   return (
-    <AppBar position="static" sx={{backgroundColor: "#DDEB9D"}}>
+    <AppBar position="static" sx={{backgroundColor: "transparent", boxShadow:"none"}}>
       <Container>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Logo */}
@@ -95,7 +95,7 @@ const navLinks =
                 to={link.path}
                 sx={{
                   ...navLinkStyle,
-                  borderBottom: isActive(link.path) ? '2px solid #143D60' : 'none',
+                  borderBottom: isActive(link.path) ? '3px solid #00953B' : 'none',
                 }}
               >
                 {link.name}
@@ -126,8 +126,8 @@ const navLinks =
               </>
             ) : (
               <Button color="inherit" component={Link} to="/login"
-              sx={{ bgcolor:'#27667B' }}>
-                Login
+              sx={{ bgcolor:'#00953B', borderRadius:'15px', width:'100px'}}>
+                <Typography sx={{ fontWeight:'bold' }}>Login</Typography>
               </Button>
             )}
           </Box>

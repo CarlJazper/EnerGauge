@@ -21,7 +21,6 @@ const Home = () => {
       sx={{
         display: "flex",
         height: "100vh",
-        backgroundColor: "#f0f4f8",
       }}
     >
       {/* Left Section */}
