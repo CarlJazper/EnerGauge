@@ -8,6 +8,7 @@ from config.db import mongo
 from bson import ObjectId
 import datetime
 from middlewares.authMiddleware import token_required
+import pytz  # For timezone conversion
 
 forecast_bp = Blueprint('forecast', __name__)
 
@@ -84,11 +85,13 @@ def predict_forecast():
     if not all(col in feature_df.columns for col in required_features):
         return jsonify({"error": f"Missing required feature columns: {required_features}"}), 400
 
-    feature_df["HVACUsage"] = feature_df["HVACUsage"].map({"On": 1, "Off": 0})
-    feature_df["LightingUsage"] = feature_df["LightingUsage"].map({"On": 1, "Off": 0})
-    feature_df["Holiday"] = feature_df["Holiday"].map({"Yes": 1, "No": 0})
+    # Convert categorical values to numerical
+    feature_df["HVACUsage"] = feature_df["HVACUsage"].astype(int)
+    feature_df["LightingUsage"] = feature_df["LightingUsage"].astype(int)
+    feature_df["Holiday"] = feature_df["Holiday"].map({"Yes": 1, "No": 0}).fillna(0).astype(int)
     feature_df["DayOfWeek"] = pd.Categorical(feature_df["DayOfWeek"]).codes
 
+    # Generate forecast
     forecast = model.forecast(steps=len(feature_df))
     forecast = energy_scaler.inverse_transform(np.array(forecast).reshape(-1, 1)).flatten()
     forecast = np.maximum(forecast, 0)
@@ -97,24 +100,50 @@ def predict_forecast():
     energy_savings = forecast * (avg_renewable_energy / 100)
     peak_load = max(forecast)
 
+    # Fetch user details
+    user = mongo.db.users.find_one({"_id": ObjectId(g.user_id)}, {"first_name": 1, "last_name": 1})
+    first_name = user.get("first_name", "Unknown") if user else "Unknown"
+    last_name = user.get("last_name", "Unknown") if user else "Unknown"
+
+    # Save full forecast details including all features
     forecast_entry = {
         "user_id": ObjectId(g.user_id),
+        "first_name": first_name,
+        "last_name": last_name,
         "timestamp": datetime.datetime.utcnow(),
         "forecast_data": [
             {
                 "timestamp": ts.isoformat(),
                 "forecast_energy": round(energy, 2),
-                "energy_savings": round(savings, 2)
+                "energy_savings": round(savings, 2),
+                "peak_load": round(peak_load, 2),
+                "features": {
+                    "Temperature": round(temp, 2),
+                    "Humidity": round(hum, 2),
+                    "SquareFootage": sqft,
+                    "Occupancy": occ,
+                    "HVACUsage": hvac,
+                    "LightingUsage": lighting,
+                    "RenewableEnergy": round(renew, 2),
+                    "DayOfWeek": day,
+                    "Holiday": holiday
+                }
             }
-            for ts, energy, savings in zip(future_dates, forecast, energy_savings)
-        ],
-        "peak_load": round(peak_load, 2)
+            for ts, energy, savings, temp, hum, sqft, occ, hvac, lighting, renew, day, holiday in zip(
+                future_dates, forecast, energy_savings, 
+                feature_df["Temperature"], feature_df["Humidity"], feature_df["SquareFootage"], 
+                feature_df["Occupancy"], feature_df["HVACUsage"], feature_df["LightingUsage"], 
+                feature_df["RenewableEnergy"], feature_df["DayOfWeek"], feature_df["Holiday"]
+            )
+        ]
     }
-    mongo.db.forecasts.insert_one(forecast_entry)
 
+    mongo.db.forecasts.insert_one(forecast_entry)
     return jsonify({
         "forecast_data": forecast_entry["forecast_data"],
-        "peak_load": forecast_entry["peak_load"]
+        "peak_load": forecast_entry["forecast_data"][0]["peak_load"],
+        "first_name": first_name,
+        "last_name": last_name
     })
 
 @token_required
@@ -123,75 +152,128 @@ def get_forecast_trends():
         return jsonify({"error": "Unauthorized"}), 403
 
     # Fetch all forecast records
-    forecasts = list(mongo.db.forecasts.find({}, {"_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
+    forecasts = list(mongo.db.forecasts.find({}, {
+        "_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1
+    }))
 
-    # Calculate summary metrics
+    # Initialize summary metrics
     total_energy = 0
     total_energy_savings = 0
     peak_loads = []
+    all_features = {  # Store feature-wise sums for analysis
+        "Temperature": 0, "Humidity": 0, "SquareFootage": 0, "Occupancy": 0,
+        "HVACUsage": 0, "LightingUsage": 0, "RenewableEnergy": 0, "DayOfWeek": 0, "Holiday": 0
+    }
+    total_entries = 0
 
     for forecast in forecasts:
         forecast["_id"] = str(forecast["_id"])
         forecast["user_id"] = str(forecast["user_id"])
         forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
-        
-        # Sum energy consumption and savings
-        forecast["total_forecast_energy"] = round(sum(entry["forecast_energy"] for entry in forecast.get("forecast_data", [])), 2)
-        forecast["total_energy_savings"] = round(sum(entry["energy_savings"] for entry in forecast.get("forecast_data", [])), 2)
-        forecast["peak_load"] = round(forecast.get("peak_load", 0), 2)
 
-        total_energy += forecast["total_forecast_energy"]
-        total_energy_savings += forecast["total_energy_savings"]
-        peak_loads.append(forecast["peak_load"])
+        # Compute total forecasted energy and energy savings
+        total_forecast_energy = sum(entry["forecast_energy"] for entry in forecast.get("forecast_data", []))
+        total_energy_savings_entry = sum(entry["energy_savings"] for entry in forecast.get("forecast_data", []))
+        peak_load = max(entry["forecast_energy"] for entry in forecast.get("forecast_data", [])) if forecast.get("forecast_data") else 0
 
+        # Aggregate values
+        total_energy += total_forecast_energy
+        total_energy_savings += total_energy_savings_entry
+        peak_loads.append(peak_load)
+
+        # Summing up feature data for trend analysis
+        for entry in forecast.get("forecast_data", []):
+            features = entry.get("features", {})
+            for key in all_features:
+                all_features[key] += features.get(key, 0)  # Accumulate feature values
+            total_entries += 1
+
+        # Update forecast object
+        forecast["total_forecast_energy"] = round(total_forecast_energy, 2)
+        forecast["total_energy_savings"] = round(total_energy_savings_entry, 2)
+        forecast["peak_load"] = round(peak_load, 2)
+
+    # Compute averages for features
+    avg_features = {
+        key: round(value / total_entries, 2) if total_entries else 0 for key, value in all_features.items()
+    }
     average_peak_load = round(np.mean(peak_loads), 2) if peak_loads else 0
 
     return jsonify({
         "forecasts": forecasts,
-        "total_forecasts": len(forecasts),  # No need to count documents separately
+        "total_forecasts": len(forecasts),
         "total_energy": round(total_energy, 2),
         "total_energy_savings": round(total_energy_savings, 2),
-        "average_peak_load": average_peak_load
+        "average_peak_load": average_peak_load,
+        "average_features": avg_features  # Include average feature trends
     })
 
 @token_required
-def get_forecast_for_user():
-    user_id = g.user_id
-    forecast = mongo.db.forecasts.find_one({"user_id": ObjectId(user_id)})
+def get_user_forecast():
+    user_id = ObjectId(g.user_id)
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
 
-    if not forecast:
-        return jsonify({"error": "No forecast data found for the user."}), 404
+    # Convert date filters to datetime
+    date_filter = {}
+    if start_date:
+        date_filter["$gte"] = datetime.datetime.fromisoformat(start_date)
+    if end_date:
+        date_filter["$lte"] = datetime.datetime.fromisoformat(end_date)
 
-    forecast_data = forecast.get("forecast_data", [])
+    query = {"user_id": user_id}
+    if date_filter:
+        query["timestamp"] = date_filter
 
-    if not forecast_data:
-        return jsonify({"error": "No forecast entries found."}), 404
+    # Fetch user forecasts
+    forecasts = list(mongo.db.forecasts.find(query, {"_id": 0, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
 
-    # Calculate total energy consumption & savings
-    total_energy_consumption = sum(entry["forecast_energy"] for entry in forecast_data)
-    total_energy_savings = sum(entry["energy_savings"] for entry in forecast_data)
-    peak_load = max(entry["forecast_energy"] for entry in forecast_data)
+    if not forecasts:
+        return jsonify({"message": "No forecasts found for the user."}), 404
 
-    # Calculate average consumption
-    avg_energy_consumption = round(total_energy_consumption / len(forecast_data), 2) if forecast_data else 0
-
-    # Determine the highest contributor
-    hvac_usage = sum(1 for entry in forecast_data if entry.get("HVACUsage", 0) == 1)
-    lighting_usage = sum(1 for entry in forecast_data if entry.get("LightingUsage", 0) == 1)
-
-    contributors = {
-        "HVAC Usage": hvac_usage,
-        "Lighting Usage": lighting_usage,
+    # Extract insights
+    total_energy = 0
+    total_savings = 0
+    peak_loads = []
+    forecast_count = len(forecasts)
+    energy_by_weekday = {i: 0 for i in range(7)}  # Weekday-based trend
+    factor_sums = {
+        "Temperature": 0, "Humidity": 0, "SquareFootage": 0, "Occupancy": 0,
+        "HVACUsage": 0, "LightingUsage": 0, "RenewableEnergy": 0, "Holiday": 0
     }
-    highest_contributor = max(contributors, key=contributors.get) if contributors else "Unknown"
+    factor_counts = {key: 0 for key in factor_sums}  # To calculate averages
+
+    for forecast in forecasts:
+        forecast["timestamp"] = forecast["timestamp"].isoformat()
+        for entry in forecast["forecast_data"]:
+            total_energy += entry["forecast_energy"]
+            total_savings += entry["energy_savings"]
+            peak_loads.append(entry["peak_load"])
+
+            # Extract weekday trends
+            weekday = datetime.datetime.fromisoformat(entry["timestamp"]).weekday()
+            energy_by_weekday[weekday] += entry["forecast_energy"]
+
+            # Aggregate feature contributions
+            for key in factor_sums:
+                if key in entry["features"]:
+                    factor_sums[key] += entry["features"][key]
+                    factor_counts[key] += 1
+
+    # Compute averages
+    avg_peak_load = round(np.mean(peak_loads), 2) if peak_loads else 0
+    min_peak_load = round(min(peak_loads), 2) if peak_loads else 0
+    max_peak_load = round(max(peak_loads), 2) if peak_loads else 0
+    avg_factors = {key: round(factor_sums[key] / factor_counts[key], 2) if factor_counts[key] > 0 else 0 for key in factor_sums}
 
     return jsonify({
-        "forecast_data": forecast_data,
-        "total_energy_consumption": round(total_energy_consumption, 2),
-        "average_energy_consumption": avg_energy_consumption,
-        "peak_load": round(peak_load, 2),
-        "total_energy_savings": round(total_energy_savings, 2),
-        "highest_contributor": highest_contributor,
-        "hvac_usage": hvac_usage,
-        "lighting_usage": lighting_usage 
-})
+        "forecasts": forecasts,
+        "total_forecasts": forecast_count,
+        "total_energy_forecasted": round(total_energy, 2),
+        "total_energy_savings": round(total_savings, 2),
+        "average_peak_load": avg_peak_load,
+        "min_peak_load": min_peak_load,
+        "max_peak_load": max_peak_load,
+        "energy_by_weekday": energy_by_weekday,
+        "average_feature_contributions": avg_factors
+    })

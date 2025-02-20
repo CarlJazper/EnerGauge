@@ -1,6 +1,6 @@
 import React from "react";
 import { Grid, Typography, Paper, Box } from "@mui/material";
-import ForecastData from "../User/ForecastData"; // Adjust path if needed
+import ForecastData from "../User/UserForecast"; // Adjust path if needed
 
 const Dashboard = () => {
   return (
