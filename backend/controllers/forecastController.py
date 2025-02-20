@@ -227,22 +227,9 @@ def get_forecast_trends():
 @token_required
 def get_user_forecast():
     user_id = ObjectId(g.user_id)
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
 
-    # Convert date filters to datetime
-    date_filter = {}
-    if start_date:
-        date_filter["$gte"] = datetime.datetime.fromisoformat(start_date)
-    if end_date:
-        date_filter["$lte"] = datetime.datetime.fromisoformat(end_date)
-
-    query = {"user_id": user_id}
-    if date_filter:
-        query["timestamp"] = date_filter
-
-    # Fetch user forecasts
-    forecasts = list(mongo.db.forecasts.find(query, {"_id": 0, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
+    # Fetch all user forecasts
+    forecasts = list(mongo.db.forecasts.find({"user_id": user_id}, {"_id": 0, "timestamp": 1, "forecast_data": 1, "peak_load": 1}))
 
     if not forecasts:
         return jsonify({"message": "No forecasts found for the user."}), 404
