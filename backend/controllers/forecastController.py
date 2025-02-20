@@ -153,3 +153,45 @@ def get_forecast_trends():
         "total_energy_savings": round(total_energy_savings, 2),
         "average_peak_load": average_peak_load
     })
+
+@token_required
+def get_forecast_for_user():
+    user_id = g.user_id
+    forecast = mongo.db.forecasts.find_one({"user_id": ObjectId(user_id)})
+
+    if not forecast:
+        return jsonify({"error": "No forecast data found for the user."}), 404
+
+    forecast_data = forecast.get("forecast_data", [])
+
+    if not forecast_data:
+        return jsonify({"error": "No forecast entries found."}), 404
+
+    # Calculate total energy consumption & savings
+    total_energy_consumption = sum(entry["forecast_energy"] for entry in forecast_data)
+    total_energy_savings = sum(entry["energy_savings"] for entry in forecast_data)
+    peak_load = max(entry["forecast_energy"] for entry in forecast_data)
+
+    # Calculate average consumption
+    avg_energy_consumption = round(total_energy_consumption / len(forecast_data), 2) if forecast_data else 0
+
+    # Determine the highest contributor
+    hvac_usage = sum(1 for entry in forecast_data if entry.get("HVACUsage", 0) == 1)
+    lighting_usage = sum(1 for entry in forecast_data if entry.get("LightingUsage", 0) == 1)
+
+    contributors = {
+        "HVAC Usage": hvac_usage,
+        "Lighting Usage": lighting_usage,
+    }
+    highest_contributor = max(contributors, key=contributors.get) if contributors else "Unknown"
+
+    return jsonify({
+        "forecast_data": forecast_data,
+        "total_energy_consumption": round(total_energy_consumption, 2),
+        "average_energy_consumption": avg_energy_consumption,
+        "peak_load": round(peak_load, 2),
+        "total_energy_savings": round(total_energy_savings, 2),
+        "highest_contributor": highest_contributor,
+        "hvac_usage": hvac_usage,
+        "lighting_usage": lighting_usage 
+})

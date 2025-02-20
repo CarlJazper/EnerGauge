@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, TextField, Box, Typography, Grid, MenuItem } from "@mui/material";
+import { Button, TextField, Box, Typography, Grid, MenuItem, Alert, CircularProgress } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import axios from "axios";
 
@@ -25,38 +25,51 @@ const Forecast = () => {
     };
 
     const handleSubmit = async () => {
-        setLoading(true);
         setError("");
         setForecastData(null);
-    
+
+        if (!days || days < 1) {
+            setError("Please enter a valid number of days to forecast.");
+            return;
+        }
+
+        const missingFields = Object.keys(inputs).filter((key) => inputs[key] === "");
+        if (missingFields.length > 0) {
+            setError(`Please fill in all fields: ${missingFields.join(", ")}`);
+            return;
+        }
+
+        setLoading(true);
+
         const futureTimestamps = [];
         const featureInputs = [];
-    
-        for (let i = 0; i < days; i++) {
+
+        for (let i = 0; i < parseInt(days, 10); i++) {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + i);
             futureTimestamps.push(futureDate.toISOString().split("T")[0]);
-    
+
             featureInputs.push({
-                Temperature: parseFloat(inputs.Temperature) || 22.5,
-                Humidity: parseFloat(inputs.Humidity) || 60,
-                SquareFootage: parseFloat(inputs.SquareFootage) || 1200,
-                Occupancy: parseInt(inputs.Occupancy, 10) || 5,
+                Temperature: parseFloat(inputs.Temperature),
+                Humidity: parseFloat(inputs.Humidity),
+                SquareFootage: parseFloat(inputs.SquareFootage),
+                Occupancy: parseInt(inputs.Occupancy, 10),
                 HVACUsage: inputs.HVACUsage === "On" ? 1 : 0,
                 LightingUsage: inputs.LightingUsage === "On" ? 1 : 0,
-                RenewableEnergy: parseFloat(inputs.RenewableEnergy) || 50,
+                RenewableEnergy: parseFloat(inputs.RenewableEnergy),
                 DayOfWeek: futureDate.getDay(),
                 Holiday: inputs.Holiday === "Yes" ? 1 : 0
             });
         }
-    
-        const requestData = { timestamps: futureTimestamps, features: featureInputs };
-    
+
         try {
-            const response = await axios.post("http://localhost:5000/predict_forecast", requestData, {
+            const response = await axios.post("http://localhost:5000/predict_forecast", {
+                timestamps: futureTimestamps,
+                features: featureInputs,
+            }, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
-    
+
             setForecastData(response.data);
         } catch (err) {
             setError(err.response?.data?.error || "Error fetching predictions");
@@ -75,22 +88,30 @@ const Forecast = () => {
     };
 
     return (
-        <Box sx={{ padding: 3 }}>
-            <Typography variant="h5" gutterBottom>
+        <Box sx={{ padding: 4, maxWidth: 800, margin: "auto" }}>
+            <Typography variant="h4" gutterBottom>
                 Energy Forecasting
             </Typography>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Grid container spacing={2}>
                 <Grid item xs={12}>
-                    <TextField
-                        label="Days to Forecast"
-                        type="number"
-                        value={days}
-                        onChange={(e) => setDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                        fullWidth
-                    />
+                <TextField
+                  label="Days to Forecast"
+                  type="number"
+                  value={days === null ? "" : days}  // Allow empty input
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "") {
+                          setDays(null); // Allow clearing the input
+                        } else {
+                          setDays(Math.max(1, parseInt(value, 10) || 1));
+                        }
+                    }}
+                 fullWidth
+                />
                 </Grid>
                 {Object.keys(inputs).map((key) => (
-                    <Grid item xs={12} sm={6} md={4} key={key}>
+                    <Grid item xs={12} sm={6} key={key}>
                         {key === "HVACUsage" || key === "LightingUsage" || key === "Holiday" ? (
                             <TextField
                                 select
@@ -123,12 +144,11 @@ const Forecast = () => {
                     </Grid>
                 ))}
             </Grid>
-            <Button variant="contained" onClick={handleSubmit} disabled={loading} sx={{ marginTop: 2 }}>
-                {loading ? "Loading..." : "Get Forecast"}
+            <Button variant="contained" onClick={handleSubmit} disabled={loading} sx={{ mt: 3, width: "100%" }}>
+                {loading ? <CircularProgress size={24} /> : "Get Forecast"}
             </Button>
-            {error && <Typography color="error" sx={{ marginTop: 2 }}>{error}</Typography>}
             {forecastData && (
-                <Box sx={{ marginTop: 3 }}>
+                <Box sx={{ mt: 4 }}>
                     <Typography variant="h6">Forecast Results:</Typography>
                     <Typography variant="body1">
                         <strong>Estimated Peak Load:</strong> {forecastData.peak_load} kW

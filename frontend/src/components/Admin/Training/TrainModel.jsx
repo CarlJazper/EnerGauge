@@ -48,7 +48,7 @@ const TrainModel = () => {
         {/* Upload & Training Results Section */}
         <Grid item xs={12} md={6}>
           <Card sx={{ padding: 3, boxShadow: 3 }}>
-            <Typography variant="h5" fontWeight="bold" gutterBottom>
+            <Typography variant="h5" gutterBottom>
               Train Energy Consumption Model
             </Typography>
             <input type="file" accept=".csv" onChange={handleFileChange} />
