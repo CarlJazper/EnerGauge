@@ -1,19 +1,19 @@
 from flask import Blueprint, request, jsonify, g
 import pandas as pd
 import numpy as np
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.preprocessing import MinMaxScaler
 from models.forecastModel import save_model, load_model
 from config.db import mongo
 from bson import ObjectId
 import datetime
 from middlewares.authMiddleware import token_required
-import pytz  # For timezone conversion
+
 
 forecast_bp = Blueprint('forecast', __name__)
 
 @token_required  
-def train_arima():
+def train_sarimax():
     if g.role != "admin":
         return jsonify({"error": "Unauthorized"}), 403
 
@@ -34,35 +34,48 @@ def train_arima():
     
     if not all(col in df.columns for col in required_columns):
         return jsonify({"error": "CSV must contain required energy forecasting columns"}), 400
-    
+
+    # Convert timestamp and sort by date
     df["Timestamp"] = pd.to_datetime(df["Timestamp"])
     df.set_index("Timestamp", inplace=True)
     df = df.sort_index()
-    
+
+    # Convert categorical values to numerical
     df["HVACUsage"] = df["HVACUsage"].map({"On": 1, "Off": 0})
     df["LightingUsage"] = df["LightingUsage"].map({"On": 1, "Off": 0})
     df["Holiday"] = df["Holiday"].map({"Yes": 1, "No": 0})
     df["DayOfWeek"] = pd.Categorical(df["DayOfWeek"]).codes
 
-    scaler = MinMaxScaler()
+    # Scale features
     feature_columns = [
         "Temperature", "Humidity", "SquareFootage", "Occupancy",
         "HVACUsage", "LightingUsage", "RenewableEnergy", "DayOfWeek", "Holiday"
     ]
+    scaler = MinMaxScaler()
     df[feature_columns] = scaler.fit_transform(df[feature_columns])
+
+    # Scale target variable
     energy_scaler = MinMaxScaler()
     df["EnergyConsumption"] = energy_scaler.fit_transform(df[["EnergyConsumption"]])
 
-    model = ARIMA(df["EnergyConsumption"], order=(5,1,0))
+    # Train SARIMAX Model
+    model = SARIMAX(
+        df["EnergyConsumption"], 
+        exog=df[feature_columns],  # Include external variables
+        order=(5,1,0),             # Non-seasonal ARIMA part
+        seasonal_order=(1,1,1,24)  # Seasonal component (24-hour pattern)
+    )
+    
     fitted_model = model.fit()
 
-    save_model(fitted_model, energy_scaler)
-    
-    return jsonify({"message": "ARIMA model trained successfully."})
+    # Save the trained model and scalers using save_model function
+    save_model(fitted_model, energy_scaler, scaler)
+
+    return jsonify({"message": "SARIMAX model trained successfully."})
 
 @token_required  
 def predict_forecast():
-    model, energy_scaler = load_model()
+    model, energy_scaler, feature_scaler = load_model()
     if model is None:
         return jsonify({"error": "No trained model found."}), 400
 
@@ -91,8 +104,11 @@ def predict_forecast():
     feature_df["Holiday"] = feature_df["Holiday"].map({"Yes": 1, "No": 0}).fillna(0).astype(int)
     feature_df["DayOfWeek"] = pd.Categorical(feature_df["DayOfWeek"]).codes
 
-    # Generate forecast
-    forecast = model.forecast(steps=len(feature_df))
+    # Scale the features
+    feature_df_scaled = feature_scaler.transform(feature_df[required_features])
+
+    # Generate forecast using SARIMAX
+    forecast = model.predict(start=len(feature_df), end=len(feature_df) + len(future_dates) - 1, exog=feature_df_scaled)
     forecast = energy_scaler.inverse_transform(np.array(forecast).reshape(-1, 1)).flatten()
     forecast = np.maximum(forecast, 0)
 

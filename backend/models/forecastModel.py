@@ -1,29 +1,29 @@
-import pickle
+import joblib
 import os
 from config.db import mongo
 
-MODEL_PATH = "models/trainedDataForecast/arima_model.pkl"
-SCALER_PATH = "models/trainedDataForecast/scaler.pkl"
+MODEL_PATH = "models/trainedDataForecast/sarimax_model.pkl"
+SCALER_PATH = "models/trainedDataForecast/energy_scaler.pkl"
+FEATURE_SCALER_PATH = "models/trainedDataForecast/feature_scaler.pkl"
 
-def save_model(model, scaler):
-    """Save the ARIMA model and scaler."""
-    os.makedirs("models", exist_ok=True)
-    with open(MODEL_PATH, "wb") as model_file:
-        pickle.dump(model, model_file)
-    with open(SCALER_PATH, "wb") as scaler_file:
-        pickle.dump(scaler, scaler_file)
+def save_model(model, energy_scaler, feature_scaler):
+    """Save the SARIMAX model and scalers."""
+    os.makedirs("models/trainedDataForecast", exist_ok=True)
+    
+    joblib.dump(model, MODEL_PATH)
+    joblib.dump(energy_scaler, SCALER_PATH)
+    joblib.dump(feature_scaler, FEATURE_SCALER_PATH)
 
 def load_model():
-    """Load the ARIMA model and scaler if available."""
-    if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH):
-        return None, None
+    """Load the SARIMAX model and scalers if available."""
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH) or not os.path.exists(FEATURE_SCALER_PATH):
+        return None, None, None
     
-    with open(MODEL_PATH, "rb") as model_file:
-        model = pickle.load(model_file)
-    with open(SCALER_PATH, "rb") as scaler_file:
-        scaler = pickle.load(scaler_file)
-    
-    return model, scaler
+    model = joblib.load(MODEL_PATH)
+    energy_scaler = joblib.load(SCALER_PATH)
+    feature_scaler = joblib.load(FEATURE_SCALER_PATH)
+
+    return model, energy_scaler, feature_scaler
 
 def get_forecast_history():
     """Retrieve all stored forecasts for dashboard trends."""
