@@ -68,35 +68,38 @@ const TrainForecast = () => {
 
                 {/* Right Section: Model Explanation */}
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ padding: 3, borderRadius: 2, boxShadow: 3 }}>
-                        <Typography variant="h6" gutterBottom>
-                            How the Model Works
-                        </Typography>
-                        <Typography variant="body2">
-                            The ARIMA model (AutoRegressive Integrated Moving Average) is used for 
-                            time series forecasting. It captures trends, seasonality, and residual 
-                            patterns in historical energy consumption data to make future predictions.
-                        </Typography>
+    <Paper sx={{ padding: 3, borderRadius: 2, boxShadow: 3 }}>
+        <Typography variant="h6" gutterBottom>
+            How the Model Works
+        </Typography>
+        <Typography variant="body2">
+            The SARIMAX model (Seasonal AutoRegressive Integrated Moving Average with Exogenous 
+            Variables) is used for time series forecasting. It extends ARIMA by incorporating 
+            seasonal patterns and external factors such as temperature, humidity, and occupancy 
+            to improve prediction accuracy. This model helps in capturing trends, periodic fluctuations, 
+            and the influence of external variables on energy consumption.
+        </Typography>
 
-                        <Typography variant="h6" gutterBottom sx={{ marginTop: 2 }}>
-                            Required Columns in CSV
-                        </Typography>
-                        <Typography variant="body2">
-                            The CSV file should contain the following columns:
-                        </Typography>
-                        <ul>
-                            <li><strong>Temperature</strong> - Outdoor temperature</li>
-                            <li><strong>Humidity</strong> - Humidity percentage</li>
-                            <li><strong>SquareFootage</strong> - Size of the area</li>
-                            <li><strong>Occupancy</strong> - Number of people present</li>
-                            <li><strong>HVACUsage</strong> - Energy used by HVAC</li>
-                            <li><strong>LightingUsage</strong> - Energy used for lighting</li>
-                            <li><strong>RenewableEnergy</strong> - Renewable energy contribution</li>
-                            <li><strong>DayOfWeek</strong> - Categorical day (Monday-Sunday)</li>
-                            <li><strong>Holiday</strong> - Whether the day is a holiday (0/1)</li>
-                        </ul>
-                    </Paper>
-                </Grid>
+        <Typography variant="h6" gutterBottom sx={{ marginTop: 2 }}>
+            Required Columns in CSV
+        </Typography>
+        <Typography variant="body2">
+            The CSV file should contain the following columns:
+        </Typography>
+        <ul>
+            <li><strong>Temperature</strong> - Outdoor temperature</li>
+            <li><strong>Humidity</strong> - Humidity percentage</li>
+            <li><strong>SquareFootage</strong> - Size of the area</li>
+            <li><strong>Occupancy</strong> - Number of people present</li>
+            <li><strong>HVACUsage</strong> - Energy used by HVAC</li>
+            <li><strong>LightingUsage</strong> - Energy used for lighting</li>
+            <li><strong>RenewableEnergy</strong> - Renewable energy contribution</li>
+            <li><strong>DayOfWeek</strong> - Categorical day (Monday-Sunday)</li>
+            <li><strong>Holiday</strong> - Whether the day is a holiday (0/1)</li>
+        </ul>
+    </Paper>
+</Grid>
+
             </Grid>
         </Box>
     );

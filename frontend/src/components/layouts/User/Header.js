@@ -65,7 +65,6 @@ const navLinks =
 
         ...(isLoggedIn && role === 'user'
           ? [
-              { name: 'Prediction', path: '/prediction' },
               { name: 'Forecast', path: '/forecast' },
             ]
           : []),

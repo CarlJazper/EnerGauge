@@ -172,11 +172,21 @@ def get_forecast_trends():
         "_id": 1, "user_id": 1, "timestamp": 1, "forecast_data": 1
     }))
 
+    # Fetch total users count
+    total_users = mongo.db.users.count_documents({})
+    
+    # Get unique users who made forecasts
+    unique_user_ids = set(forecast["user_id"] for forecast in forecasts)
+    total_users_forecasting = len(unique_user_ids)
+
+    # Fetch user details for each unique user_id
+    user_details = {str(user["_id"]): user for user in mongo.db.users.find({}, {"_id": 1, "first_name": 1, "last_name": 1})}
+
     # Initialize summary metrics
     total_energy = 0
     total_energy_savings = 0
     peak_loads = []
-    all_features = {  # Store feature-wise sums for analysis
+    all_features = {  
         "Temperature": 0, "Humidity": 0, "SquareFootage": 0, "Occupancy": 0,
         "HVACUsage": 0, "LightingUsage": 0, "RenewableEnergy": 0, "DayOfWeek": 0, "Holiday": 0
     }
@@ -186,6 +196,11 @@ def get_forecast_trends():
         forecast["_id"] = str(forecast["_id"])
         forecast["user_id"] = str(forecast["user_id"])
         forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
+
+        # Attach user details if available
+        user_info = user_details.get(forecast["user_id"], {})
+        forecast["first_name"] = user_info.get("first_name", "Unknown")
+        forecast["last_name"] = user_info.get("last_name", "Unknown")
 
         # Compute total forecasted energy and energy savings
         total_forecast_energy = sum(entry["forecast_energy"] for entry in forecast.get("forecast_data", []))
@@ -201,7 +216,7 @@ def get_forecast_trends():
         for entry in forecast.get("forecast_data", []):
             features = entry.get("features", {})
             for key in all_features:
-                all_features[key] += features.get(key, 0)  # Accumulate feature values
+                all_features[key] += features.get(key, 0)
             total_entries += 1
 
         # Update forecast object
@@ -221,7 +236,9 @@ def get_forecast_trends():
         "total_energy": round(total_energy, 2),
         "total_energy_savings": round(total_energy_savings, 2),
         "average_peak_load": average_peak_load,
-        "average_features": avg_features  # Include average feature trends
+        "average_features": avg_features,
+        "total_users": total_users,
+        "total_users_forecasting": total_users_forecasting
     })
 
 @token_required

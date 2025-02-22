@@ -175,7 +175,7 @@ const Register = () => {
             variant="contained"
             fullWidth
             onClick={handleRegister}
-            sx={{ mt: 4, mb: 2, py: 1.5, fontSize: '1rem', backgroundColor: 'primary.main' }}
+            sx={{ mt: 4, mb: 2, py: 1.5, fontSize: '1rem', backgroundColor: 'primary.main', color:'#fff'}}
           >
             Register
           </Button>
