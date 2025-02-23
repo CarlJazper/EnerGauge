@@ -42,7 +42,7 @@ def generate_jwt(user_id,role,expires_in=JWT_EXPIRATION_MINUTES):
     payload = {
         "user_id": str(user_id),
         "role": role,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_in)
+        "exp": datetime.datetime.now() + datetime.timedelta(minutes=expires_in)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 

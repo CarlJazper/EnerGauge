@@ -126,7 +126,7 @@ def predict_forecast():
         "user_id": ObjectId(g.user_id),
         "first_name": first_name,
         "last_name": last_name,
-        "timestamp": datetime.datetime.utcnow(),
+        "timestamp": datetime.datetime.now(),
         "forecast_data": [
             {
                 "timestamp": ts.isoformat(),
@@ -195,7 +195,7 @@ def get_forecast_trends():
     for forecast in forecasts:
         forecast["_id"] = str(forecast["_id"])
         forecast["user_id"] = str(forecast["user_id"])
-        forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.utcnow()).isoformat()
+        forecast["timestamp"] = forecast.get("timestamp", datetime.datetime.now()).isoformat()
 
         # Attach user details if available
         user_info = user_details.get(forecast["user_id"], {})

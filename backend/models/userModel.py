@@ -10,5 +10,5 @@ def get_user_schema():
         "email": "",
         "password": "",
         "role": "user",  # Default role
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now()
     }
