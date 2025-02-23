@@ -87,7 +87,12 @@ def send_verification_email(email, user_id):
 def register_user():
     """User Registration with Email Verification"""
     data = request.get_json()
-    user_data = get_user_schema()
+    user_data = get_user_schema(
+    first_name=data["first_name"],
+    last_name=data["last_name"],
+    email=data["email"],
+    password=data["password"]
+    )
     # Validate required fields
     for field in ["first_name", "last_name", "email", "password"]:
         if field not in data:

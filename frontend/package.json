@@ -13,6 +13,7 @@
     "cra-template": "1.2.0",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
+    "formik": "^2.4.6",
     "framer-motion": "^12.4.1",
     "json2csv": "^6.0.0-alpha.2",
     "jspdf": "^2.5.2",
@@ -27,7 +28,8 @@
     "react-scripts": "5.0.1",
     "recharts": "^2.15.1",
     "styled-components": "^6.1.15",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "yup": "^1.6.1"
   },
   "scripts": {
     "start": "react-scripts start",

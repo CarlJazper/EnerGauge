@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TextField, Button, Box, Typography, Link, ThemeProvider, createTheme, Paper, InputAdornment } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
@@ -58,30 +60,42 @@ const theme = createTheme({
   },
 });
 
+// Yup validation schema
+const validationSchema = Yup.object({
+  firstName: Yup.string().required('First name is required'),
+  lastName: Yup.string().required('Last name is required'),
+  email: Yup.string().email('Invalid email format').required('Email is required'),
+  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+});
+
 const Register = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    try {
-      const response = await axios.post('http://localhost:5000/api/users/register', {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password,
-      });
+  const formik = useFormik({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+    },
+    validationSchema,
+    onSubmit: async (values, { setSubmitting, setErrors }) => {
+      try {
+        const response = await axios.post('http://localhost:5000/api/users/register', {
+          first_name: values.firstName,
+          last_name: values.lastName,
+          email: values.email,
+          password: values.password,
+        });
 
-      setSuccess(true);
-      setMessage(response.data.message);
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Something went wrong");
-    }
-  };
+        alert(response.data.message);
+        navigate('/login');
+      } catch (error) {
+        setErrors({ api: error.response?.data?.message || 'Something went wrong' });
+      }
+      setSubmitting(false);
+    },
+  });
 
   return (
     <ThemeProvider theme={theme}>
@@ -108,89 +122,88 @@ const Register = () => {
             Register
           </Typography>
 
-          {success ? (
-            <Typography variant="body1" color="success.main" sx={{ mb: 2, textAlign: 'center' }}>
-              {message} <br /> Please check your email for verification.
-            </Typography>
-          ) : (
-            <>
-              <TextField
-                label="First Name"
-                fullWidth
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                label="Last Name"
-                fullWidth
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                label="Email"
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                label="Password"
-                type="password"
-                fullWidth
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="primary" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={handleRegister}
-                sx={{ mt: 4, mb: 2, py: 1.5, fontSize: '1rem', backgroundColor: 'primary.main', color:'#fff'}}
-              >
-                Register
-              </Button>
-            </>
-          )}
+          <form onSubmit={formik.handleSubmit} style={{ width: '100%' }}>
+            <TextField
+              label="First Name"
+              fullWidth
+              {...formik.getFieldProps('firstName')}
+              margin="normal"
+              error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+              helperText={formik.touched.firstName && formik.errors.firstName}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-          {message && !success && (
-            <Typography variant="body2" color="error" sx={{ mt: 1, mb: 2 }}>
-              {message}
-            </Typography>
-          )}
+            <TextField
+              label="Last Name"
+              fullWidth
+              {...formik.getFieldProps('lastName')}
+              margin="normal"
+              error={formik.touched.lastName && Boolean(formik.errors.lastName)}
+              helperText={formik.touched.lastName && formik.errors.lastName}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              label="Email"
+              fullWidth
+              {...formik.getFieldProps('email')}
+              margin="normal"
+              error={formik.touched.email && Boolean(formik.errors.email)}
+              helperText={formik.touched.email && formik.errors.email}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              {...formik.getFieldProps('password')}
+              margin="normal"
+              error={formik.touched.password && Boolean(formik.errors.password)}
+              helperText={formik.touched.password && formik.errors.password}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {formik.errors.api && (
+              <Typography variant="body2" color="error" sx={{ mt: 1, mb: 2 }}>
+                {formik.errors.api}
+              </Typography>
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 4, mb: 2, py: 1.5, fontSize: '1rem', backgroundColor: 'primary.main', color: '#fff' }}
+              disabled={formik.isSubmitting}
+            >
+              {formik.isSubmitting ? 'Registering...' : 'Register'}
+            </Button>
+          </form>
 
           <Typography variant="body2" sx={{ mt: 2, color: 'text.primary' }}>
             Already have an account?{' '}
