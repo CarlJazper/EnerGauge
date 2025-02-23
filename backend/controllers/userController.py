@@ -21,7 +21,7 @@ MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True") == "True"
 MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "False") == "True"
-MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@yourapp.com")
+MAIL_FROM = os.getenv("MAIL_FROM")
 
 mail = Mail()
 
@@ -47,7 +47,6 @@ def generate_jwt(user_id,role,expires_in=JWT_EXPIRATION_MINUTES):
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 def send_verification_email(email, user_id):
-    """Send a visually appealing HTML verification email."""
     token = generate_jwt(user_id, "verify", expires_in=30)  # 30 min expiry for email verification
     verification_url = url_for("user_bp.verify_email", token=token, _external=True)
 
@@ -87,38 +86,31 @@ def send_verification_email(email, user_id):
 def register_user():
     """User Registration with Email Verification"""
     data = request.get_json()
-    user_data = get_user_schema(
-    first_name=data["first_name"],
-    last_name=data["last_name"],
-    email=data["email"],
-    password=data["password"]
-    )
+
     # Validate required fields
-    for field in ["first_name", "last_name", "email", "password"]:
+    required_fields = ["first_name", "last_name", "email", "password"]
+    for field in required_fields:
         if field not in data:
             return jsonify({"message": f"{field} is required"}), 400
 
     # Check if user already exists
-    existing_user = mongo.db.users.find_one({"email": data["email"]})
-    if existing_user:
+    if mongo.db.users.find_one({"email": data["email"]}):
         return jsonify({"message": "User already exists"}), 400
 
-    # Hash password
-    hashed_password = generate_password_hash(data["password"])
+    # Create user schema with default is_verified=False
+    user_data = get_user_schema(
+        first_name=data["first_name"],
+        last_name=data["last_name"],
+        email=data["email"],
+        password=data["password"],
+        is_verified=False
+    )
 
-    # Prepare user data
-    user_data.update({
-        "first_name": data["first_name"],
-        "last_name": data["last_name"],
-        "email": data["email"],
-        "password": hashed_password,
-        "verified": False  # User not verified initially
-    })
     # Insert user into database
     inserted_user = mongo.db.users.insert_one(user_data)
+
     # Send verification email
     email_sent = send_verification_email(data["email"], inserted_user.inserted_id)
-    
     if not email_sent:
         return jsonify({"message": "User registered but failed to send verification email"}), 500
 
@@ -136,11 +128,11 @@ def verify_email():
         if not user:
             return jsonify({"message": "Invalid token or user not found"}), 400
 
-        if user.get("verified"):
+        if user.get("is_verified"):
             return jsonify({"message": "Email already verified"}), 200
 
         # Update user verification status
-        mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"verified": True}})
+        mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"is_verified": True}})
         return jsonify({"message": "Email verified successfully"}), 200
 
     except jwt.ExpiredSignatureError:
@@ -162,12 +154,10 @@ def login_user():
     if not check_password_hash(user["password"], data["password"]):
         return jsonify({"message": "Incorrect password"}), 400
 
-    if not user.get("verified"):
+    if not user.get("is_verified"):
         return jsonify({"message": "Please verify your email before logging in"}), 403
 
-    role = user.get("role")
-    token = generate_jwt(user["_id"], role)
-
+    token = generate_jwt(user["_id"], user["role"])
     return jsonify({"message": "Login successful", "token": token}), 200
 
 #Users profile

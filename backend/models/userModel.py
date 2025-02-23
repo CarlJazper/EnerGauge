@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime 
 import re
 from werkzeug.security import generate_password_hash
 
@@ -7,7 +7,7 @@ def is_valid_email(email):
     pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     return bool(re.match(pattern, email))
 
-def get_user_schema(first_name, last_name, email, password, address="", city="", country="", role="user"):
+def get_user_schema(first_name, last_name, email, password, address="", city="", country="", role="user", is_verified=False):
     """Creates a user dictionary with validation and security improvements."""
     
     if not is_valid_email(email):
@@ -24,5 +24,6 @@ def get_user_schema(first_name, last_name, email, password, address="", city="",
         "city": city,
         "country": country,
         "role": role,  # Default role
+        "is_verified": is_verified,  # Email verification status
         "created_at": datetime.now(),
     }
