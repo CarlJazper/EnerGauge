@@ -83,6 +83,15 @@ const UserUpdate = () => {
       />
       <TextField
         fullWidth
+        label="Phone"
+        name="phone"
+        value={user.phone || ""}
+        onChange={handleInputChange}
+        margin="normal"
+        required
+      />
+      <TextField
+        fullWidth
         label="Address"
         name="address"
         value={user.address || ""}

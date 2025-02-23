@@ -78,8 +78,11 @@ const Profile = () => {
               {user.first_name} {user.last_name}
             </Typography>
           </Box>
-          
+
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <ProfileField><strong>Phone:</strong> {user.phone}</ProfileField>
+            </Grid>
             <Grid item xs={12}>
               <ProfileField><strong>Address:</strong> {user.address}</ProfileField>
             </Grid>

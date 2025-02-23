@@ -88,7 +88,7 @@ def register_user():
     data = request.get_json()
 
     # Validate required fields
-    required_fields = ["first_name", "last_name", "email", "password"]
+    required_fields = ["first_name", "last_name", "email", "password", "phone"]
     for field in required_fields:
         if field not in data:
             return jsonify({"message": f"{field} is required"}), 400
@@ -103,6 +103,10 @@ def register_user():
         last_name=data["last_name"],
         email=data["email"],
         password=data["password"],
+        address=data.get("address", ""),
+        city=data.get("city", ""),
+        country=data.get("country", ""),
+        phone=data.get("phone", ""),  # Handle phone input
         is_verified=False
     )
 
@@ -115,6 +119,7 @@ def register_user():
         return jsonify({"message": "User registered but failed to send verification email"}), 500
 
     return jsonify({"message": "User registered successfully. Check email for verification"}), 201
+
 
 def verify_email():
     """Verify user email from the token"""
@@ -181,7 +186,7 @@ def update_user_profile():
     data = request.get_json()
 
     # Only allow updates to certain fields
-    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
+    allowed_fields = ["first_name", "last_name", "address", "city", "country", "phone"]
     update_data = {field: data[field] for field in allowed_fields if field in data}
 
     if not update_data:
@@ -193,6 +198,7 @@ def update_user_profile():
         return jsonify({"message": "No changes made"}), 200
 
     return jsonify({"message": "Profile updated successfully"}), 200
+
 
 # Get all users
 @token_required
@@ -226,7 +232,7 @@ def update_user(user_id):
     data = request.get_json()
 
     # Only allow updates to certain fields
-    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
+    allowed_fields = ["first_name", "last_name", "address", "city", "country", "phone"]
     update_data = {field: data[field] for field in allowed_fields if field in data}
 
     if not update_data:

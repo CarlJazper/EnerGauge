@@ -54,6 +54,7 @@ const UpdateProfile = () => {
   const [user, setUser] = useState({
     first_name: "",
     last_name: "",
+    phone: "",
     address: "",
     city: "",
     country: "",
@@ -112,6 +113,9 @@ const UpdateProfile = () => {
             </Grid>
             <Grid item xs={12} sm={6}>
               <StyledTextField label="Last Name" name="last_name" fullWidth value={user.last_name} onChange={handleChange} />
+            </Grid>
+            <Grid item xs={12}>
+              <StyledTextField label="Phone" name="phone" fullWidth value={user.phone} onChange={handleChange} />
             </Grid>
             <Grid item xs={12}>
               <StyledTextField label="Address" name="address" fullWidth value={user.address} onChange={handleChange} />

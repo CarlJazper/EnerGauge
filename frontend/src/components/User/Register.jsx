@@ -7,6 +7,7 @@ import * as Yup from 'yup';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import PhoneIcon from '@mui/icons-material/Phone';
 
 // Theme configuration
 const theme = createTheme({
@@ -65,6 +66,9 @@ const validationSchema = Yup.object({
   firstName: Yup.string().required('First name is required'),
   lastName: Yup.string().required('Last name is required'),
   email: Yup.string().email('Invalid email format').required('Email is required'),
+  phone: Yup.string()
+    .matches(/^\+?\d{10,15}$/, 'Invalid phone number format')
+    .required('Phone number is required'),
   password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
 });
 
@@ -76,6 +80,7 @@ const Register = () => {
       firstName: '',
       lastName: '',
       email: '',
+      phone: '',
       password: '',
     },
     validationSchema,
@@ -85,6 +90,7 @@ const Register = () => {
           first_name: values.firstName,
           last_name: values.lastName,
           email: values.email,
+          phone: values.phone,
           password: values.password,
         });
 
@@ -166,6 +172,22 @@ const Register = () => {
                 startAdornment: (
                   <InputAdornment position="start">
                     <EmailIcon color="primary" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              label="Phone"
+              fullWidth
+              {...formik.getFieldProps('phone')}
+              margin="normal"
+              error={formik.touched.phone && Boolean(formik.errors.phone)}
+              helperText={formik.touched.phone && formik.errors.phone}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneIcon color="primary" />
                   </InputAdornment>
                 ),
               }}

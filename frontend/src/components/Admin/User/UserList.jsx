@@ -118,6 +118,12 @@ const UserList = () => {
       cell: (row) => <Typography variant="body2">{row.email}</Typography>,
     },
     {
+      name: "Phone",
+      selector: (row) => row.phone,
+      sortable: true,
+      cell: (row) => <Typography variant="body2">{row.phone || "N/A"}</Typography>,
+    },
+    {
       name: "Location",
       selector: (row) => `${row.city}, ${row.country}`,
       sortable: true,
