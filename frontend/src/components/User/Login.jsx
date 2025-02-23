@@ -67,6 +67,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     setLoading(true);
+    setMessage('');
     try {
       const response = await axios.post('http://localhost:5000/api/users/login', {
         email,
@@ -80,13 +81,16 @@ const Login = () => {
 
       if (role === 'admin') {
         navigate('/admin/dashboard');
-      } else if (role === 'user') {
-        navigate('/dashboard');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (error) {
-      setMessage(error.response?.data.message || "Something went wrong");
+      const errorMsg = error.response?.data?.message || "Something went wrong";
+      if (errorMsg.toLowerCase().includes("email not verified")) {
+        setMessage("Your email is not verified. Please check your email for the verification link.");
+      } else {
+        setMessage(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -158,7 +162,7 @@ const Login = () => {
           </Button>
 
           {message && (
-            <Typography variant="body2" color="error" sx={{ mt: 1, mb: 2 }}>
+            <Typography variant="body2" color="error" sx={{ mt: 1, mb: 2, textAlign: 'center' }}>
               {message}
             </Typography>
           )}

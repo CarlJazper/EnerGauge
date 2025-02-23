@@ -6,6 +6,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Home from "./components/Home";
 import About from "./components/About";
 import Login from "./components/User/Login";
+import VerifyEmail from "./components/User/VerifyEmail";
 import Register from "./components/User/Register";
 //User
 import UserDashboard from "./components/User/Dashboard";
@@ -55,6 +56,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/register" element={<Register />} />
 
           {/* User Protected Routes */}
