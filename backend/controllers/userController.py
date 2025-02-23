@@ -46,39 +46,6 @@ def generate_jwt(user_id,role,expires_in=JWT_EXPIRATION_MINUTES):
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
-@token_required
-def get_user_profile():
-    """Get user profile details"""
-    user_id = g.user_id  # Use `g.user_id` instead of `request.user_id`
-    user = mongo.db.users.find_one({"_id": ObjectId(user_id)}, {"password": 0})  # Exclude password
-
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
-    return jsonify(user), 200
-
-
-@token_required
-def update_user_profile():
-    """Update user profile"""
-    user_id = g.user_id
-    data = request.get_json()
-
-    # Only allow updates to certain fields
-    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
-    update_data = {field: data[field] for field in allowed_fields if field in data}
-
-    if not update_data:
-        return jsonify({"message": "No valid fields to update"}), 400
-
-    result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
-
-    if result.modified_count == 0:
-        return jsonify({"message": "No changes made"}), 200
-
-    return jsonify({"message": "Profile updated successfully"}), 200
-
 def send_verification_email(email, user_id):
     """Send a visually appealing HTML verification email."""
     token = generate_jwt(user_id, "verify", expires_in=30)  # 30 min expiry for email verification
@@ -176,7 +143,6 @@ def verify_email():
     except jwt.InvalidTokenError:
         return jsonify({"message": "Invalid token"}), 400
 
-
 def login_user():
     """Login user only if verified"""
     data = request.get_json()
@@ -199,6 +165,39 @@ def login_user():
 
     return jsonify({"message": "Login successful", "token": token}), 200
 
+#Users profile
+@token_required
+def get_user_profile():
+    """Get user profile details"""
+    user_id = g.user_id  # Use `g.user_id` instead of `request.user_id`
+    user = mongo.db.users.find_one({"_id": ObjectId(user_id)}, {"password": 0})  # Exclude password
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
+    return jsonify(user), 200
+
+
+@token_required
+def update_user_profile():
+    """Update user profile"""
+    user_id = g.user_id
+    data = request.get_json()
+
+    # Only allow updates to certain fields
+    allowed_fields = ["first_name", "last_name", "address", "city", "country"]
+    update_data = {field: data[field] for field in allowed_fields if field in data}
+
+    if not update_data:
+        return jsonify({"message": "No valid fields to update"}), 400
+
+    result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
+
+    if result.modified_count == 0:
+        return jsonify({"message": "No changes made"}), 200
+
+    return jsonify({"message": "Profile updated successfully"}), 200
 
 # Get all users
 @token_required
