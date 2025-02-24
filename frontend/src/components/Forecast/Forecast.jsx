@@ -95,20 +95,20 @@ const Forecast = () => {
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <Grid container spacing={2}>
                 <Grid item xs={12}>
-                <TextField
-                  label="Days to Forecast"
-                  type="number"
-                  value={days === null ? "" : days}  // Allow empty input
-                    onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "") {
-                          setDays(null); // Allow clearing the input
-                        } else {
-                          setDays(Math.max(1, parseInt(value, 10) || 1));
-                        }
-                    }}
-                 fullWidth
-                />
+                    <TextField
+                        label="Days to Forecast"
+                        type="number"
+                        value={days === null ? "" : days}  // Allow empty input
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "") {
+                                setDays(null); // Allow clearing the input
+                            } else {
+                                setDays(Math.max(1, parseInt(value, 10) || 1));
+                            }
+                        }}
+                        fullWidth
+                    />
                 </Grid>
                 {Object.keys(inputs).map((key) => (
                     <Grid item xs={12} sm={6} key={key}>
@@ -163,6 +163,21 @@ const Forecast = () => {
                             <Line type="monotone" dataKey="energySavings" stroke="#82ca9d" name="Energy Savings" />
                         </LineChart>
                     </ResponsiveContainer>
+
+                    {/* Feature Contribution Breakdown */}
+                    <Typography variant="h6" sx={{ mt: 3 }}>Energy Predictions</Typography>
+                    {forecastData.forecast_data.map((entry, index) => (
+                        <Box key={index} sx={{ mb: 2, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}>
+                            <Typography variant="subtitle1">Day {index + 1} - Total Energy: {entry.forecast_energy} kW</Typography>
+                            <Grid container spacing={2}>
+                                {Object.entries(entry.feature_contributions).map(([feature, value]) => (
+                                    <Grid item xs={6} sm={4} key={feature}>
+                                        <Typography variant="body2"><strong>{feature}:</strong> {value} kW</Typography>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    ))}
                 </Box>
             )}
         </Box>

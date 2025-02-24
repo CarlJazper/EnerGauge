@@ -1,170 +1,151 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, TextField, Button, Grid, CircularProgress, MenuItem, Select } from "@mui/material";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Box, Typography, CircularProgress, Grid, Paper } from "@mui/material";
+import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
 
 const UserForecast = () => {
-  const [forecasts, setForecasts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedForecast, setSelectedForecast] = useState(null);
-  const [totalEnergy, setTotalEnergy] = useState(0);
-  const [totalSavings, setTotalSavings] = useState(0);
-  const [avgPeakLoad, setAvgPeakLoad] = useState(0);
-  const [minPeakLoad, setMinPeakLoad] = useState(0);
-  const [maxPeakLoad, setMaxPeakLoad] = useState(0);
-  const [energyByWeekday, setEnergyByWeekday] = useState({});
-  const [avgFeatureContributions, setAvgFeatureContributions] = useState({});
-
-  // Fetch forecasts and calculate summary stats
-  const fetchForecasts = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("http://localhost:5000/userforecast", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
-
-      const { forecasts } = response.data;
-      setForecasts(forecasts);
-
-      if (forecasts.length > 0) {
-        setSelectedForecast(forecasts[0]);
-        updateStats(forecasts);
-      } else {
-        setSelectedForecast(null);
-      }
-    } catch (error) {
-      console.error("Error fetching forecasts:", error);
-      setForecasts([]);
-    }
-    setLoading(false);
-  };
+  const [forecastData, setForecastData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchForecasts();
-  }, []); // Fetch on page load
-
-  const updateStats = (forecasts) => {
-    let totalEnergy = 0;
-    let totalSavings = 0;
-    let peakLoads = [];
-    let energyByWeekday = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-    let factorSums = {
-      "Temperature": 0, "Humidity": 0, "SquareFootage": 0, "Occupancy": 0,
-      "HVACUsage": 0, "LightingUsage": 0, "RenewableEnergy": 0, "Holiday": 0
-    };
-    let factorCounts = { ...factorSums };
-
-    forecasts.forEach(forecast => {
-      forecast.forecast_data.forEach(entry => {
-        totalEnergy += entry.forecast_energy;
-        totalSavings += entry.energy_savings;
-        peakLoads.push(entry.peak_load);
-
-        // Energy by weekday
-        const weekday = new Date(entry.timestamp).getDay();
-        energyByWeekday[weekday] += entry.forecast_energy;
-
-        // Factor contributions
-        Object.keys(factorSums).forEach(key => {
-          if (entry.features[key] !== undefined) {
-            factorSums[key] += entry.features[key];
-            factorCounts[key] += 1;
-          }
+    const fetchForecast = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/userforecast", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
-      });
-    });
+        setForecastData(response.data);
+      } catch (err) {
+        setError("Failed to fetch forecast data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchForecast();
+  }, []);
 
-    // Average calculations
-    const avgPeakLoad = peakLoads.length ? (peakLoads.reduce((a, b) => a + b, 0) / peakLoads.length).toFixed(2) : 0;
-    const avgFactors = Object.keys(factorSums).reduce((acc, key) => {
-      acc[key] = factorCounts[key] > 0 ? (factorSums[key] / factorCounts[key]).toFixed(2) : 0;
-      return acc;
-    }, {});
+  if (loading) return <Box display="flex" justifyContent="center"><CircularProgress /></Box>;
 
-    setTotalEnergy(totalEnergy.toFixed(2));
-    setTotalSavings(totalSavings.toFixed(2));
-    setAvgPeakLoad(avgPeakLoad);
-    setMinPeakLoad(Math.min(...peakLoads).toFixed(2));
-    setMaxPeakLoad(Math.max(...peakLoads).toFixed(2));
-    setEnergyByWeekday(energyByWeekday);
-    setAvgFeatureContributions(avgFactors);
-  };
+  if (error) return <Typography color="error">{error}</Typography>;
 
-  const handleForecastChange = (event) => {
-    const forecast = forecasts.find(f => f.timestamp === event.target.value);
-    setSelectedForecast(forecast);
-  };
+  // Check if no forecast data is available
+  if (!forecastData || Object.keys(forecastData).length === 0) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>No forecast yet</Typography>
+      </Box>
+    );
+  }
+
+  const { total_forecasts, total_energy, total_savings, avg_peak_load, min_peak_load, max_peak_load, avg_factors, energy_by_weekday } = forecastData;
+
+  // Convert weekday data for Line Chart
+  const energyTrendData = Object.keys(energy_by_weekday).map(day => ({
+    name: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day],
+    energy: energy_by_weekday[day]
+  }));
+
+  // Convert factor contributions for Pie Chart
+  const factorData = Object.keys(avg_factors).map(key => ({
+    name: key, value: avg_factors[key]
+  }));
+
+  const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1", "#d0ed57", "#a4de6c", "#ffbb28"];
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" mb={2}>User Forecast Dashboard</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>User Forecast Data</Typography>
 
-      {loading ? (
-        <CircularProgress sx={{ display: "block", margin: "20px auto" }} />
-      ) : (
-        <>
-          <Box my={3}>
-            <Typography variant="h6">Summary Overview</Typography>
-            <Typography>Total Forecasted Energy: {totalEnergy} kWh</Typography>
-            <Typography>Total Energy Savings: {totalSavings} kWh</Typography>
-            <Typography>Average Peak Load: {avgPeakLoad} kWh</Typography>
-            <Typography>Min Peak Load: {minPeakLoad} kWh</Typography>
-            <Typography>Max Peak Load: {maxPeakLoad} kWh</Typography>
-            <Typography variant="h6" mt={3}>Energy by Weekday</Typography>
-            <Grid container spacing={2}>
-              {Object.keys(energyByWeekday).map(day => (
-                <Grid item xs={2} key={day}>
-                  <Typography>{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]}</Typography>
-                  <Typography>{energyByWeekday[day]} kWh</Typography>
-                </Grid>
-              ))}
-            </Grid>
-            <Typography variant="h6" mt={3}>Average Feature Contributions</Typography>
-            {Object.keys(avgFeatureContributions).map(key => (
-              <Typography key={key}>{key}: {avgFeatureContributions[key]} kWh</Typography>
-            ))}
-          </Box>
+      {/* Stats Overview */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Total Forecasts</Typography>
+            <Typography variant="h4">{total_forecasts}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Total Energy Usage</Typography>
+            <Typography variant="h4">{total_energy} kWh</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Total Savings</Typography>
+            <Typography variant="h4">{total_savings} kWh</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
-          <Box my={3}>
-            <Typography>Select Forecast:</Typography>
-            <Select fullWidth value={selectedForecast?.timestamp || ""} onChange={handleForecastChange}>
-              {forecasts.map(forecast => (
-                <MenuItem key={forecast.timestamp} value={forecast.timestamp}>{forecast.timestamp}</MenuItem>
-              ))}
-            </Select>
-          </Box>
+      {/* Peak Load Stats */}
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Avg Peak Load</Typography>
+            <Typography variant="h4">{avg_peak_load} kW</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Min Peak Load</Typography>
+            <Typography variant="h4">{min_peak_load} kW</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Max Peak Load</Typography>
+            <Typography variant="h4">{max_peak_load} kW</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
-          {selectedForecast && (
-            <>
-              <Box my={3}>
-                <Typography variant="h6">Forecasted Energy Consumption</Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={selectedForecast.forecast_data}>
-                    <XAxis dataKey="timestamp" tickFormatter={(date) => date.split("T")[0]} />
-                    <YAxis />
-                    <Tooltip />
-                    <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="forecast_energy" stroke="#8884d8" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
+      {/* Charts */}
+      <Grid container spacing={3} sx={{ mt: 3 }}>
+        {/* Line Chart: Energy Consumption by Weekday */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Energy Consumption by Day</Typography>
+            <LineChart width={400} height={250} data={energyTrendData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="energy" stroke="#8884d8" />
+            </LineChart>
+          </Paper>
+        </Grid>
 
-              <Box my={3}>
-                <Typography variant="h6">Energy Savings</Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={selectedForecast.forecast_data}>
-                    <XAxis dataKey="timestamp" tickFormatter={(date) => date.split("T")[0]} />
-                    <YAxis />
-                    <Tooltip />
-                    <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
-                    <Bar dataKey="energy_savings" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </>
-          )}
-        </>
-      )}
+        {/* Bar Chart: Energy Savings */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Energy Savings</Typography>
+            <BarChart width={400} height={250} data={[{ name: "Savings", value: total_savings }]}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#82ca9d" />
+            </BarChart>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Pie Chart: Factor Contributions */}
+      <Grid container justifyContent="center" sx={{ mt: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6">Factor Contributions</Typography>
+            <PieChart width={400} height={300}>
+              <Pie data={factorData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value">
+                {factorData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
