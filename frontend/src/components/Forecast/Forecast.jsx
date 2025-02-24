@@ -12,7 +12,7 @@ const Forecast = () => {
         HVACUsage: "Off",
         LightingUsage: "Off",
         RenewableEnergy: "",
-        DayOfWeek: "",
+        DayOfWeek: "",  // User selects Day of the Week
         Holiday: "No"
     });
     const [days, setDays] = useState(1);
@@ -57,7 +57,7 @@ const Forecast = () => {
                 HVACUsage: inputs.HVACUsage === "On" ? 1 : 0,
                 LightingUsage: inputs.LightingUsage === "On" ? 1 : 0,
                 RenewableEnergy: parseFloat(inputs.RenewableEnergy),
-                DayOfWeek: futureDate.getDay(),
+                DayOfWeek: inputs.DayOfWeek !== "" ? parseInt(inputs.DayOfWeek, 10) : futureDate.getDay(),
                 Holiday: inputs.Holiday === "Yes" ? 1 : 0
             });
         }
@@ -130,6 +130,19 @@ const Forecast = () => {
                                         <MenuItem key={option} value={option}>{option}</MenuItem>
                                     ))
                                 )}
+                            </TextField>
+                        ) : key === "DayOfWeek" ? (
+                            <TextField
+                                select
+                                label="Day of the Week"
+                                name="DayOfWeek"
+                                value={inputs[key]}
+                                onChange={handleChange}
+                                fullWidth
+                            >
+                                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
+                                    <MenuItem key={index} value={index}>{day}</MenuItem>
+                                ))}
                             </TextField>
                         ) : (
                             <TextField

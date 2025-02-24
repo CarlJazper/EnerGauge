@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, Response, make_response
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -7,7 +7,14 @@ from models.forecastModel import save_model, load_model
 from config.db import mongo
 from bson import ObjectId
 import datetime
+import io
+import csv
 from middlewares.authMiddleware import token_required
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+import matplotlib.pyplot as plt
+from reportlab.pdfgen import canvas
+from matplotlib.backends.backend_pdf import FigureCanvasPdf
 
 forecast_bp = Blueprint('forecast', __name__)
 
@@ -310,3 +317,87 @@ def get_user_forecast():
         "energy_by_weekday": avg_energy_by_weekday,
         "forecasts": forecasts
     })
+
+@token_required
+def download_forecast_csv():
+    try:
+        user_id = ObjectId(g.user_id)
+
+        # Fetch all user forecasts
+        forecasts = list(mongo.db.forecasts.find({"user_id": user_id}, {"_id": 0, "timestamp": 1, "forecast_data": 1}))
+
+        if not forecasts:
+            return jsonify({"message": "No forecasts found for the user."}), 404
+
+        # Prepare CSV data
+        csv_output = io.StringIO()
+        csv_writer = csv.writer(csv_output)
+
+        # Add header
+        csv_writer.writerow(["Timestamp", "Forecast Energy", "Energy Savings", "Peak Load", "Feature Contributions"])
+
+        for forecast in forecasts:
+            for entry in forecast.get("forecast_data", []):
+                timestamp = entry.get("timestamp")
+                forecast_energy = entry.get("forecast_energy", 0)
+                energy_savings = entry.get("energy_savings", 0)
+                peak_load = entry.get("peak_load", 0)
+                feature_contributions = ", ".join([f"{key}: {value}" for key, value in entry.get("feature_contributions", {}).items()])
+
+                csv_writer.writerow([timestamp, forecast_energy, energy_savings, peak_load, feature_contributions])
+
+        # Make the StringIO object seekable
+        csv_output.seek(0)
+
+        # Send the file as response
+        return Response(csv_output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=forecast_data.csv"})
+    except Exception as e:
+        print(f"Error in download_forecast_csv: {str(e)}")  # Log the error
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+@token_required
+def download_forecast_pdf():
+    user_id = ObjectId(g.user_id)
+
+    # Fetch all user forecasts
+    forecasts = list(mongo.db.forecasts.find({"user_id": user_id}, {"_id": 0, "timestamp": 1, "forecast_data": 1}))
+
+    if not forecasts:
+        return jsonify({"message": "No forecasts found for the user."}), 404
+
+    # Create PDF document
+    pdf_output = io.BytesIO()
+    c = canvas.Canvas(pdf_output, pagesize=letter)
+
+    # Set font and styles
+    c.setFont("Helvetica", 10)
+
+    # Add some title
+    c.drawString(100, 750, "Forecast Data")
+    c.drawString(100, 730, f"User ID: {str(user_id)}")
+
+    y_position = 710
+    for forecast in forecasts:
+        c.drawString(100, y_position, f"Timestamp: {forecast['timestamp']}")
+        y_position -= 20
+
+        for entry in forecast.get("forecast_data", []):
+            c.drawString(100, y_position, f"Forecast Energy: {entry.get('forecast_energy')}")
+            c.drawString(100, y_position - 15, f"Energy Savings: {entry.get('energy_savings')}")
+            c.drawString(100, y_position - 30, f"Peak Load: {entry.get('peak_load')}")
+            c.drawString(100, y_position - 45, f"Feature Contributions: {entry.get('feature_contributions')}")
+            y_position -= 60
+
+            if y_position < 100:  # Handle page overflow
+                c.showPage()
+                y_position = 750
+
+    # Save the PDF
+    c.save()
+
+    # Send the PDF file as response
+    pdf_output.seek(0)
+    response = make_response(pdf_output.read())
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "attachment;filename=forecast_data.pdf"
+    return response
