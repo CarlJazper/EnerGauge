@@ -82,7 +82,31 @@ def send_verification_email(email, user_id):
         print("Error sending email:", e)
         return False
 
+def verify_email():
+    """Verify user email from the token"""
+    token = request.args.get("token")
 
+    try:
+        decoded = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user_id = decoded.get("user_id")
+
+        user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return jsonify({"message": "Invalid token or user not found"}), 400
+
+        if user.get("is_verified"):
+            return jsonify({"message": "Email already verified"}), 200
+
+        # Update user verification status
+        mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"is_verified": True}})
+        return jsonify({"message": "Email verified successfully"}), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Verification link expired"}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({"message": "Invalid token"}), 400
+
+#Authentication
 def register_user():
     """User Registration with Email Verification"""
     data = request.get_json()
@@ -120,31 +144,6 @@ def register_user():
 
     return jsonify({"message": "User registered successfully. Check email for verification"}), 201
 
-
-def verify_email():
-    """Verify user email from the token"""
-    token = request.args.get("token")
-
-    try:
-        decoded = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        user_id = decoded.get("user_id")
-
-        user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            return jsonify({"message": "Invalid token or user not found"}), 400
-
-        if user.get("is_verified"):
-            return jsonify({"message": "Email already verified"}), 200
-
-        # Update user verification status
-        mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"is_verified": True}})
-        return jsonify({"message": "Email verified successfully"}), 200
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({"message": "Verification link expired"}), 400
-    except jwt.InvalidTokenError:
-        return jsonify({"message": "Invalid token"}), 400
-
 def login_user():
     """Login user only if verified"""
     data = request.get_json()
@@ -178,7 +177,6 @@ def get_user_profile():
     user["_id"] = str(user["_id"])  # Convert ObjectId to string for JSON response
     return jsonify(user), 200
 
-
 @token_required
 def update_user_profile():
     """Update user profile"""
@@ -198,7 +196,6 @@ def update_user_profile():
         return jsonify({"message": "No changes made"}), 200
 
     return jsonify({"message": "Profile updated successfully"}), 200
-
 
 # Get all users
 @token_required
@@ -244,7 +241,6 @@ def update_user(user_id):
         return jsonify({"message": "No changes made"}), 200
 
     return jsonify({"message": "User updated successfully"}), 200
-
 
 # Delete user by ID
 @token_required
