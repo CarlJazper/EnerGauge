@@ -2,7 +2,7 @@ import os
 import jwt
 import datetime
 from flask import jsonify, request, g, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from config.db import mongo
 from models.userModel import get_user_schema
 from dotenv import load_dotenv
