@@ -16,11 +16,15 @@ const UserForecast = () => {
         });
         setForecastData(response.data);
       } catch (err) {
-        setError("Failed to fetch forecast data.");
+        if (err.response && err.response.status === 404) {
+          setError("No forecast availale yet.");
+        } else {
+          setError("Failed to fetch forecast data.");
+        }
       } finally {
         setLoading(false);
       }
-    };
+    };    
     fetchForecast();
   }, []);
 
