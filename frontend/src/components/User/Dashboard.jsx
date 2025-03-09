@@ -99,10 +99,6 @@ const Dashboard = () => {
 
   return (
     <DashboardContainer maxWidth="xl">
-      <DashboardTitle variant="h4">
-        Energy Consumption Dashboard
-      </DashboardTitle>
-
       <Grid container spacing={4}>
         <Grid item xs={12}>
           <StyledPaper elevation={0}>
@@ -119,7 +115,7 @@ const Dashboard = () => {
                   color: theme.palette.text.primary 
                 }}
               >
-                Energy Forecast Analysis
+                EnergyGauge
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Tooltip title="Download CSV">

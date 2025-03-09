@@ -1,12 +1,58 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Box, Typography, CircularProgress, Grid, Paper } from "@mui/material";
-import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
+import { 
+  Box, 
+  Typography, 
+  CircularProgress, 
+  Grid, 
+  Paper,
+  useTheme,
+  alpha
+} from "@mui/material";
+import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
+import BoltIcon from '@mui/icons-material/Bolt';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
+import SavingsIcon from '@mui/icons-material/Savings';
+import SpeedIcon from '@mui/icons-material/Speed';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { styled } from '@mui/material/styles';
+
+// Custom styled components
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: 16,
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+  background: 'linear-gradient(145deg, #ffffff 0%, #f8fdf8 100%)',
+  transition: 'transform 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+  }
+}));
+
+const StatCard = styled(StyledPaper)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+  minHeight: 160,
+  justifyContent: 'center',
+}));
+
+// Custom color palette
+const COLORS = {
+  primary: '#7FB069',
+  secondary: '#98C9A3',
+  tertiary: '#B5E4BC',
+  quaternary: '#D4F2D2',
+  accent: '#5D8233',
+};
 
 const UserForecast = () => {
   const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchForecast = async () => {
@@ -17,7 +63,7 @@ const UserForecast = () => {
         setForecastData(response.data);
       } catch (err) {
         if (err.response && err.response.status === 404) {
-          setError("No forecast availale yet.");
+          setError("No forecast available yet.");
         } else {
           setError("Failed to fetch forecast data.");
         }
@@ -28,126 +74,187 @@ const UserForecast = () => {
     fetchForecast();
   }, []);
 
-  if (loading) return <Box display="flex" justifyContent="center"><CircularProgress /></Box>;
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <CircularProgress size={60} thickness={4} sx={{ color: COLORS.primary }} />
+    </Box>
+  );
 
-  if (error) return <Typography color="error">{error}</Typography>;
+  if (error) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+      <Typography color="error" variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <QueryStatsIcon /> {error}
+      </Typography>
+    </Box>
+  );
 
-  // Check if no forecast data is available
   if (!forecastData || Object.keys(forecastData).length === 0) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>No forecast yet</Typography>
+      <Box sx={{ p: 3, textAlign: 'center', minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h5" color={COLORS.accent}>No forecast data available yet</Typography>
       </Box>
     );
   }
 
   const { total_forecasts, total_energy, total_savings, avg_peak_load, min_peak_load, max_peak_load, avg_factors, energy_by_weekday } = forecastData;
 
-  // Convert weekday data for Line Chart
   const energyTrendData = Object.keys(energy_by_weekday).map(day => ({
     name: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day],
     energy: energy_by_weekday[day]
   }));
 
-  // Convert factor contributions for Pie Chart
   const factorData = Object.keys(avg_factors).map(key => ({
-    name: key, value: avg_factors[key]
+    name: key, 
+    value: avg_factors[key]
   }));
 
-  const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1", "#d0ed57", "#a4de6c", "#ffbb28"];
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>User Forecast Data</Typography>
+    <Box sx={{ p: 3, backgroundColor: alpha(COLORS.quaternary, 0.1) }}>
+      <Typography variant="h4" gutterBottom sx={{ 
+        color: COLORS.accent, 
+        fontWeight: 600,
+        mb: 4,
+        textAlign: 'center'
+      }}>
+        Energy Forecast Dashboard
+      </Typography>
 
-      {/* Stats Overview */}
-      <Grid container spacing={3}>
+      {/* Main Stats */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Total Forecasts</Typography>
-            <Typography variant="h4">{total_forecasts}</Typography>
-          </Paper>
+          <StatCard>
+            <BoltIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Total Forecasts</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{total_forecasts}</Typography>
+          </StatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Total Energy Usage</Typography>
-            <Typography variant="h4">{total_energy} kWh</Typography>
-          </Paper>
+          <StatCard>
+            <QueryStatsIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Total Energy Usage</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{total_energy} kWh</Typography>
+          </StatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Total Savings</Typography>
-            <Typography variant="h4">{total_savings} kWh</Typography>
-          </Paper>
+          <StatCard>
+            <SavingsIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Total Savings</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{total_savings} kWh</Typography>
+          </StatCard>
         </Grid>
       </Grid>
 
       {/* Peak Load Stats */}
-      <Grid container spacing={3} sx={{ mt: 2 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Avg Peak Load</Typography>
-            <Typography variant="h4">{avg_peak_load} kW</Typography>
-          </Paper>
+          <StatCard>
+            <SpeedIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Avg Peak Load</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{avg_peak_load} kW</Typography>
+          </StatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Min Peak Load</Typography>
-            <Typography variant="h4">{min_peak_load} kW</Typography>
-          </Paper>
+          <StatCard>
+            <TrendingDownIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Min Peak Load</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{min_peak_load} kW</Typography>
+          </StatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Max Peak Load</Typography>
-            <Typography variant="h4">{max_peak_load} kW</Typography>
-          </Paper>
+          <StatCard>
+            <TrendingUpIcon sx={{ fontSize: 40, color: COLORS.primary, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Max Peak Load</Typography>
+            <Typography variant="h4" sx={{ color: COLORS.accent, mt: 1 }}>{max_peak_load} kW</Typography>
+          </StatCard>
         </Grid>
       </Grid>
 
       {/* Charts */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        {/* Line Chart: Energy Consumption by Weekday */}
+      <Grid container spacing={3}>
+        {/* Line Chart */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Energy Consumption by Day</Typography>
-            <LineChart width={400} height={250} data={energyTrendData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="energy" stroke="#8884d8" />
-            </LineChart>
-          </Paper>
+          <StyledPaper>
+            <Typography variant="h6" sx={{ mb: 3, color: COLORS.accent }}>Weekly Energy Consumption</Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={energyTrendData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff',
+                    border: `1px solid ${COLORS.primary}`,
+                    borderRadius: 8
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="energy" 
+                  stroke={COLORS.primary}
+                  strokeWidth={2}
+                  dot={{ fill: COLORS.primary }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </StyledPaper>
         </Grid>
 
-        {/* Bar Chart: Energy Savings */}
+        {/* Bar Chart */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Energy Savings</Typography>
-            <BarChart width={400} height={250} data={[{ name: "Savings", value: total_savings }]}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#82ca9d" />
-            </BarChart>
-          </Paper>
+          <StyledPaper>
+            <Typography variant="h6" sx={{ mb: 3, color: COLORS.accent }}>Energy Savings Overview</Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={[{ name: "Total Savings", value: total_savings }]}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff',
+                    border: `1px solid ${COLORS.secondary}`,
+                    borderRadius: 8
+                  }}
+                />
+                <Bar dataKey="value" fill={COLORS.secondary} radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </StyledPaper>
         </Grid>
-      </Grid>
 
-      {/* Pie Chart: Factor Contributions */}
-      <Grid container justifyContent="center" sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Factor Contributions</Typography>
-            <PieChart width={400} height={300}>
-              <Pie data={factorData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value">
-                {factorData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </Paper>
+        {/* Pie Chart */}
+        <Grid item xs={12}>
+          <StyledPaper>
+            <Typography variant="h6" sx={{ mb: 3, color: COLORS.accent, textAlign: 'center' }}>
+              Factor Contributions Analysis
+            </Typography>
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie 
+                  data={factorData} 
+                  cx="50%" 
+                  cy="50%" 
+                  outerRadius={150}
+                  innerRadius={60}
+                  fill={COLORS.primary}
+                  dataKey="value"
+                  label
+                >
+                  {factorData.map((_, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={[COLORS.primary, COLORS.secondary, COLORS.tertiary, COLORS.quaternary][index % 4]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff',
+                    border: `1px solid ${COLORS.primary}`,
+                    borderRadius: 8
+                  }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </StyledPaper>
         </Grid>
       </Grid>
     </Box>
